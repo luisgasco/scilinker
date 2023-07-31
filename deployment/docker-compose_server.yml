@@ -3,8 +3,8 @@ services:
   shiny-app:
     container_name: scilinker
     build:
-      context: ./
-      dockerfile: Dockerfile
+      context: ./deployment/
+      dockerfile: scilinker_app_dockerfile
     ports:
       - 8002:3838
     network_mode: bridge

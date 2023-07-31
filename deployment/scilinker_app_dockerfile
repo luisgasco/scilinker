@@ -19,7 +19,7 @@ RUN apt-get -y install vim nano
 
 
 # GET FILES
-RUN git clone https://github.com/luisgasco/bioMnorm.git
+RUN git clone https://github.com/luisgasco/scilinker.git
 
 # ENVIRONMMENT
 ENV RENV_VERSION 0.16.0
@@ -45,7 +45,7 @@ COPY .Rprofile /home/shiny/
 COPY ui.R /srv/shiny-server/scilinker/
 COPY global.R /srv/shiny-server/scilinker/
 COPY server.R /srv/shiny-server/scilinker/
-COPY .config_file /srv/shiny-server/scilinker/data/
+COPY data/.config_file /srv/shiny-server/scilinker/data/
 COPY renv/* /srv/shiny-server/scilinker/renv/
 COPY data/* /srv/shiny-server/scilinker/data/
 COPY www/* /srv/shiny-server/scilinker/www/
