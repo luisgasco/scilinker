@@ -1,0 +1,22 @@
+#If running app in local : localhost
+MONGODB_HOST="localhost"
+#If running app in docker: 
+#MONGODB_HOST="host.docker.internal"
+#If running app in server: 
+#MONGODB_HOST="textmining2.bsc.es"
+MONGODB_PORT="27017"
+MONGODB_USER="admin"
+MONGODB_PASSWORD=""
+MONGODB_DATABASENAME="test_normalizacion_nueva2"
+MONGODB_USER_COLLECTION="usuarios"
+MONGODB_PROJECTS_COLLECTION="proyectos"
+MONGODB_MENTIONS_COLLECTION="menciones"
+MONGODB_DOCUMENTS_COLLECTION="documentos"
+MONGODB_ANNOTATIONS_COLLECTION="anotaciones"
+#Seconds to freeze and stop app
+TIMEOUT_SECONDS=1800
+# PATHS TO DATA
+#If running app in local : 
+DICCIONARY_ABS_PATH="~/scilinker/data/diccionario.tsv"
+#If running app in docker : 
+#DICCIONARY_ABS_PATH="/srv/shiny-server/bioMnorm/data/diccionario.tsv"

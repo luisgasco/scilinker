@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Aplicación de Normalización Biomédica</title>
+  <!-- Agrega aquí los enlaces a las librerías CSS o JS que necesites -->
+  <link href="https://cdn.jsdelivr.net/npm/shiny@1.6.0/dist/shiny.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h2>Aplicación de Normalización Biomédica</h2>
+    <p>¡Bienvenido/a a nuestra aplicación de normalización biomédica! Esta herramienta te permite realizar el proceso de enlazar entidades biomédicas en un texto de forma manual.</p>
+    <p>La normalización de entidades (o entity linking) es un paso crítico en el procesamiento de lenguaje natural biomédico. Consiste en asignar menciones de entidades en el texto a identificadores únicos en una base de datos de referencia, como por ejemplo bases de datos de genes, proteínas o enfermedades.</p>
+    <p>En esta aplicación, puedes ingresar un texto biomédico en el área de texto a continuación. Luego, selecciona una entidad mencionada en el texto y enlázala con la entidad correcta de la base de datos. Puedes repetir este proceso para todas las entidades mencionadas en el texto.</p>
+
+    <div class="row">
+      <div class="col-md-8">
+        <textarea id="text_area" rows="10" class="form-control" placeholder="Ingresa tu texto biomédico aquí..."></textarea>
+        <br>
+        <button id="analyze_button" class="btn btn-primary">Analizar Texto</button>
+      </div>
+      <div class="col-md-4">
+        <h3>Entidades Encontradas:</h3>
+        <ul id="entity_list" class="list-group">
+          <!-- Aquí se mostrarán las entidades encontradas en el texto -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agrega aquí los enlaces a las librerías JS que necesites -->
+  <script src="https://cdn.jsdelivr.net/npm/shiny@1.6.0/dist/shiny.min.js"></script>
+  <script>
+    // Agrega aquí el código JavaScript necesario para interactuar con Shiny y realizar la normalización de entidades de forma manual.
+    // Puedes usar eventos de clic o cualquier otra interacción que necesites.
+  </script>
+</body>
+</html>
