@@ -34,8 +34,8 @@ RUN rm -r /srv/shiny-server/* && mkdir -p /srv/shiny-server/scilinker/renv && mk
 
 
 WORKDIR /scilinker
+RUN dir -s
 COPY renv.lock /srv/shiny-server/scilinker/
-COPY renv/activate.R  /srv/shiny-server/scilinker/renv/
 COPY renv/activate.R  /srv/shiny-server/scilinker/renv/
 COPY .Rprofile /home/shiny/
 
@@ -45,7 +45,6 @@ COPY .Rprofile /home/shiny/
 COPY ui.R /srv/shiny-server/scilinker/
 COPY global.R /srv/shiny-server/scilinker/
 COPY server.R /srv/shiny-server/scilinker/
-COPY data/.config_file /srv/shiny-server/scilinker/data/
 COPY renv/* /srv/shiny-server/scilinker/renv/
 COPY data/* /srv/shiny-server/scilinker/data/
 COPY www/* /srv/shiny-server/scilinker/www/
