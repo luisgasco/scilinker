@@ -8,10 +8,10 @@ library(fontawesome)
 
 shinyjs::useShinyjs()
 print(getwd() )
-source("/scilinker/modules/error_handling.R")
-source("/scilinker/modules/annotation_utils/annotation_ui_utils.R")
-source("/scilinker/modules/annotation_utils/annotation_data_utils.R")
-source("/scilinker/modules/annotation_utils/annotation_backend_utils.R")
+source(paste0(base_path,"/scilinker/modules/error_handling.R"))
+source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_ui_utils.R"))
+source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_data_utils.R"))
+source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_backend_utils.R"))
 
 
 generalAnnotatorInterfaceUI <- function(id)
@@ -562,10 +562,10 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                                                                  user_id == session$userData$user)
         
         # Guardamos la anotación en annotation collection
-        save_annotation_in_db(session$userData$annotation_db_endpoint,current_annotation, datos_reactive$data$span[sel_row()])
+        save_annotation_in_db(session$userData$annotation_db_endpoint,current_annotation, datos_reactive$data$span[sel_row()],UPDATE_ALL)
         print("ANOTACION GUARDADA")
         # Actualizamos el estado en menciones collection (cambiando el campo asociado al user_id dentro de validated_by)
-        update_mention_in_db(session$userData$mentions_db_endpoint,datos_reactive$data[sel_row(),],session$userData$user)
+        update_mention_in_db(session$userData$mentions_db_endpoint,datos_reactive$data[sel_row(),],session$userData$user, UPDATE_ALL)
         print("MENCION ACTUALIZADA")
         reactive_values$prev_annotated(input[["previously_annotated"]])
     })

@@ -110,7 +110,7 @@ get_user_status <- function(validated_by_df,username) {
     previously_annotated_value <- user_rows$previously_annotated
     return(data.frame(state = user_rows$state, previously_annotated = user_rows$previously_annotated))
 }
-update_mention_in_db <- function(db_con, mention, user){
+update_mention_in_db <- function(db_con, mention, user, update_all){
     query <- toJSON(list(
         project_id = mention$project_id[1],
         document_id = mention$document_id[1],
@@ -137,7 +137,7 @@ update_mention_in_db <- function(db_con, mention, user){
     )
 }
 
-save_annotation_in_db <- function(db_con, anotation, texto){
+save_annotation_in_db <- function(db_con, anotation, texto, update_all){
     # Generate query
     query <- toJSON(list(
         project_id = anotation$project_id[1],  # Accede al primer elemento de la lista

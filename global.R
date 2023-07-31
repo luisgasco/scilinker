@@ -15,14 +15,13 @@ library(data.table)
 
 shinyjs::useShinyjs()
 
-# Import modules
-source("/scilinker/modules/login.R")
-source("/scilinker/modules/sidebar.R")
-source("/scilinker/modules/module_annotation.R")
-source("/scilinker/modules/module_config.R")
+
+
+# Change to false if running on docker
+LOCAL = TRUE 
 
 # Read environment variables
-readRenviron("~/scilinker/data/.config_file")
+readRenviron(ifelse(LOCAL,"~/scilinker/data/.config_file","/srv/shiny-server/scilinker/data/.config_file"))
 mongo_host <- Sys.getenv("MONGODB_HOST")
 mongo_port <- Sys.getenv("MONGODB_PORT")
 mongo_user <- Sys.getenv("MONGODB_USER")
@@ -35,7 +34,17 @@ mongo_documents_collection <- Sys.getenv("MONGODB_DOCUMENTS_COLLECTION")
 mongo_annotations_collection  <- Sys.getenv("MONGODB_ANNOTATIONS_COLLECTION")
 timeoutSeconds <- as.integer(Sys.getenv("TIMEOUT_SECONDS"))
 abspath2dicc  <- Sys.getenv("DICCIONARY_ABS_PATH")
+base_path <- Sys.getenv("ABS_PATH_LOCAL")
 
+# Import modules
+source(paste0(base_path,"/scilinker/modules/login.R"))
+source(paste0(base_path,"/scilinker/modules/sidebar.R"))
+source(paste0(base_path,"/scilinker/modules/module_annotation.R"))
+source(paste0(base_path,"/scilinker/modules/module_config.R"))
+
+# If this variable is TRUE, the app will update all equal mentions assign to user 
+# (if they are not abbreviations or need context)
+UPDATE_ALL = TRUE 
 
 # Function to verify user/password in mongodb database
 authenticate_user <- function(username, password, con)
