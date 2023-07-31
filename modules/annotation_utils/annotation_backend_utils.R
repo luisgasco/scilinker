@@ -111,71 +111,81 @@ get_user_status <- function(validated_by_df,username) {
     return(data.frame(state = user_rows$state, previously_annotated = user_rows$previously_annotated))
 }
 update_mention_in_db <- function(db_con, mention, user, update_all){
-    query <- toJSON(list(
-        project_id = mention$project_id[1],
-        document_id = mention$document_id[1],
-        span_ini = mention$span_ini[1],
-        span_end = mention$span_end[1],
-        mention_class = mention$mention_class[1],
-        "validated_by.user_id" = user
-    ), auto_unbox  = TRUE)
-    
-    user_status <- lapply(mention$validated_by, get_user_status,username=user)
-    
-    # Datos para actualizar en el documento
-    update_data <- toJSON(list(
-        "$set" = list(
-            "validated_by.$.state" = user_status[[1]]$state,
-            "validated_by.$.previously_annotated" = user_status[[1]]$previously_annotated
+    if (update_all){
+        
+    } else {
+        query <- toJSON(list(
+            project_id = mention$project_id[1],
+            document_id = mention$document_id[1],
+            span_ini = mention$span_ini[1],
+            span_end = mention$span_end[1],
+            mention_class = mention$mention_class[1],
+            "validated_by.user_id" = user
+        ), auto_unbox  = TRUE)
+        
+        user_status <- lapply(mention$validated_by, get_user_status,username=user)
+        
+        # Datos para actualizar en el documento
+        update_data <- toJSON(list(
+            "$set" = list(
+                "validated_by.$.state" = user_status[[1]]$state,
+                "validated_by.$.previously_annotated" = user_status[[1]]$previously_annotated
+            )
+        ), auto_unbox  = TRUE)
+        
+        # Realiza la actualización en MongoDB
+        db_con$update(
+            query = query,
+            update = update_data
         )
-    ), auto_unbox  = TRUE)
+    }
     
-    # Realiza la actualización en MongoDB
-    db_con$update(
-        query = query,
-        update = update_data
-    )
 }
 
 save_annotation_in_db <- function(db_con, anotation, texto, update_all){
-    # Generate query
-    query <- toJSON(list(
-        project_id = anotation$project_id[1],  # Accede al primer elemento de la lista
-        annotation_id = anotation$annotation_id[1],  # Accede al primer elemento de la lista
-        user_id = anotation$user_id[1]  # Accede al primer elemento de la lista
-    ), auto_unbox  = TRUE)
-    
-    # Verify if entry exists in connection (given in session attribute)
-    existing_entry <- db_con$find(query)
-    # Update existing entry or create a new one
-    if (length(existing_entry) > 0) {
-        # Si ya existe una entrada con datos iguales, actualizamos esa entrada
-        db_con$update(query, 
-                      jsonlite::toJSON(list(
-                          "$set" = list(
-                              document_id = anotation$document_id[1],
-                              span_ini = anotation$span_ini[1],
-                              span_end = anotation$span_end[1],
-                              num_codes = anotation$num_codes[1],
-                              is_abrev = anotation$is_abrev[1],
-                              is_composite = anotation$is_composite[1],
-                              need_context = anotation$need_context[1],
-                              previously_annotated = anotation$previously_annotated[1],
-                              codes = c(anotation[1,]$codes), #list(ifelse(is.list(anotation[1,]$codes),anotation[1,]$codes,list(anotation[1,]$codes))),
-                              sem_rels = c(anotation[1,]$sem_rels) #list(ifelse(is.list(anotation[1,]$sem_rels),anotation[1,]$sem_rels,list(anotation[1,]$sem_rels))) ,
-                          )
-                      ), auto_unbox  = TRUE))
-        cat("Entrada actualizada.")
+    if (update_all){
+        
     } else {
-        # Si no existe una entrada con datos iguales, incorporamos la anotacion
-        # que está guarda en el reactive "anotacion"
+        # Generate query
+        query <- toJSON(list(
+            project_id = anotation$project_id[1],  # Accede al primer elemento de la lista
+            annotation_id = anotation$annotation_id[1],  # Accede al primer elemento de la lista
+            user_id = anotation$user_id[1]  # Accede al primer elemento de la lista
+        ), auto_unbox  = TRUE)
         
-        
-        anotation[1,]$codes = c(anotation[1,]$codes)#list(ifelse(is.list(anotation[1,]$codes),anotation[1,]$codes,list(anotation[1,]$codes)))
-        anotation[1,]$sem_rels = c(anotation[1,]$sem_rels)#list(ifelse(is.list(anotation[1,]$sem_rels),anotation[1,]$sem_rels,list(anotation[1,]$sem_rels)) )
-        db_con$insert(anotation[1,])
-        #anotacion$text tiene que ser una lista
-        cat("Nueva entrada incorporada.")
+        # Verify if entry exists in connection (given in session attribute)
+        existing_entry <- db_con$find(query)
+        # Update existing entry or create a new one
+        if (length(existing_entry) > 0) {
+            # Si ya existe una entrada con datos iguales, actualizamos esa entrada
+            db_con$update(query, 
+                          jsonlite::toJSON(list(
+                              "$set" = list(
+                                  document_id = anotation$document_id[1],
+                                  span_ini = anotation$span_ini[1],
+                                  span_end = anotation$span_end[1],
+                                  num_codes = anotation$num_codes[1],
+                                  is_abrev = anotation$is_abrev[1],
+                                  is_composite = anotation$is_composite[1],
+                                  need_context = anotation$need_context[1],
+                                  previously_annotated = anotation$previously_annotated[1],
+                                  codes = c(anotation[1,]$codes), #list(ifelse(is.list(anotation[1,]$codes),anotation[1,]$codes,list(anotation[1,]$codes))),
+                                  sem_rels = c(anotation[1,]$sem_rels) #list(ifelse(is.list(anotation[1,]$sem_rels),anotation[1,]$sem_rels,list(anotation[1,]$sem_rels))) ,
+                              )
+                          ), auto_unbox  = TRUE))
+            cat("Entrada actualizada.")
+        } else {
+            # Si no existe una entrada con datos iguales, incorporamos la anotacion
+            # que está guarda en el reactive "anotacion"
+            
+            
+            anotation[1,]$codes = c(anotation[1,]$codes)#list(ifelse(is.list(anotation[1,]$codes),anotation[1,]$codes,list(anotation[1,]$codes)))
+            anotation[1,]$sem_rels = c(anotation[1,]$sem_rels)#list(ifelse(is.list(anotation[1,]$sem_rels),anotation[1,]$sem_rels,list(anotation[1,]$sem_rels)) )
+            db_con$insert(anotation[1,])
+            #anotacion$text tiene que ser una lista
+            cat("Nueva entrada incorporada.")
+        }
     }
+    
 }
 

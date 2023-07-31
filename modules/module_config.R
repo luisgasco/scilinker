@@ -84,17 +84,17 @@ generalConfigInterfaceUI <- function(id)
 generalConfigInterface <- function(input, output, session, con)
 {
     ns <- session$ns
-    
+
     output$projects <- renderValueBox({
         valueBox(
-            length(session$userData$data$projects[[1]]$project), "Projects", icon = icon("list"),
+            length(session$userData$data$projects[[1]]$project), "Projects", icon = icon("folder"),
             color = "purple"
         )
     })
     output$documents <- renderValueBox({
         valueBox(
-            length( sum(lengths(session$userData$data$projects[[1]]$documents))), "documents", icon = icon("list"),
-            color = "purple"
+            sum(lengths(session$userData$data$projects[[1]]$documents)), "documents", icon = icon("file"),
+            color = "olive"
         )
     })
     output$config_tab <- renderUI({
