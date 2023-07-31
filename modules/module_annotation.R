@@ -8,10 +8,10 @@ library(fontawesome)
 
 shinyjs::useShinyjs()
 print(getwd() )
-source("~/scilinker/modules/error_handling.R")
-source("~/scilinker/modules/annotation_utils/annotation_ui_utils.R")
-source("~/scilinker/modules/annotation_utils/annotation_data_utils.R")
-source("~/scilinker/modules/annotation_utils/annotation_backend_utils.R")
+source("/scilinker/modules/error_handling.R")
+source("/scilinker/modules/annotation_utils/annotation_ui_utils.R")
+source("/scilinker/modules/annotation_utils/annotation_data_utils.R")
+source("/scilinker/modules/annotation_utils/annotation_backend_utils.R")
 
 
 generalAnnotatorInterfaceUI <- function(id)

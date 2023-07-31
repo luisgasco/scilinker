@@ -3,7 +3,7 @@ services:
   shiny-app:
     container_name: scilinker
     build:
-      context: ./deployment/
+      context: ./
       dockerfile: Dockerfile
     ports:
       - 3838:3838

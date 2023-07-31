@@ -1,4 +1,4 @@
-FROM rocker/shiny:4.2.0
+FROM rocker/shiny:4.2
 # Install system requirements for index.R as needed
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
@@ -14,8 +14,10 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-RUN apt-get -y update && apt-get -y install vim nano
+RUN apt-get -y update
+RUN apt-get -y install vim nano
 
+ARG CACHEBUST=1
 
 # GET FILES
 RUN git clone https://github.com/luisgasco/scilinker.git
@@ -29,15 +31,13 @@ RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 #Install
 RUN rm -r /srv/shiny-server/* && mkdir -p /srv/shiny-server/scilinker/renv && mkdir -p /srv/shiny-server/scilinker/data && mkdir -p /srv/shiny-server/scilinker/www && chown -R shiny:shiny /srv/shiny-server/scilinker
 
-
-
-
 WORKDIR scilinker/
 RUN pwd && echo "output pwd asv" 
 RUN ls -lh && echo "Ofasfasfautput of ls command above aasf" 
+
 COPY renv.lock /srv/shiny-server/scilinker/
 COPY renv/activate.R  /srv/shiny-server/scilinker/renv/
-COPY .Rprofile /home/shiny/
+#COPY .Rprofile /home/shiny/
 
 # CHANGE TO USER
 # AQUI CAMBIA DE USUARIO/PROPIETARIO EL ROOT https://www.r-bloggers.com/2021/08/setting-up-a-transparent-reproducible-r-environment-with-docker-renv/
@@ -69,3 +69,10 @@ RUN R  -e "renv::restore(prompt=FALSE)"
 #EXPOSE 3838
 
 CMD ["/usr/bin/shiny-server"]
+
+
+
+# WORKDIR /srv/shiny-server/scilinker/
+# RUN ls -lh && echo "Output of ls shiny-server"
+# RUN pwd && echo "output pwd"
+

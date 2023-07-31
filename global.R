@@ -16,10 +16,10 @@ library(data.table)
 shinyjs::useShinyjs()
 
 # Import modules
-source("~/scilinker/modules/login.R")
-source("~/scilinker/modules/sidebar.R")
-source("~/scilinker/modules/module_annotation.R")
-source("~/scilinker/modules/module_config.R")
+source("/scilinker/modules/login.R")
+source("/scilinker/modules/sidebar.R")
+source("/scilinker/modules/module_annotation.R")
+source("/scilinker/modules/module_config.R")
 
 # Read environment variables
 readRenviron("~/scilinker/data/.config_file")
