@@ -22,7 +22,7 @@ source("~/scilinker/modules/module_annotation.R")
 source("~/scilinker/modules/module_config.R")
 
 # Read environment variables
-readRenviron(".config_file")
+readRenviron("~/scilinker/data/.config_file")
 mongo_host <- Sys.getenv("MONGODB_HOST")
 mongo_port <- Sys.getenv("MONGODB_PORT")
 mongo_user <- Sys.getenv("MONGODB_USER")

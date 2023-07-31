@@ -8,6 +8,55 @@ library(fontawesome)
 
 shinyjs::useShinyjs()
 
+validate_password <- function(old_password, new_password, db_password){
+    if (old_password == db_password) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+    
+}
+
+changePassUI  <- function(id){
+    ns <- NS(id)
+    tagList(
+            title = "Update password",
+            passwordInput(ns("old_password"), "Current password:"),
+            passwordInput(ns("new_password"), "New password:"),
+            actionButton(ns("btn_save_password"), "Save")
+    )    
+}
+
+changePass <- function(input, output, session,con) {
+    ns <- session$ns
+    
+    observeEvent(input$btn_save_password, {
+        valor_entrada = validate_password(input$old_password, input$new_password, session$userData$data$password)
+        if (valor_entrada) {
+            # Si el usuario y la contraseña son correctos, cerrar el modal y mostrar un mensaje de bienvenida
+            # removeModal()  # Cerrar el modal
+            query_find <- list(user_name = session$userData$data$user)
+            json_query_find <- toJSON(query_find, auto_unbox = TRUE)
+            # Construye la consulta como un diccionario en R
+            query_set <- list("$set" = list("password" = input$new_password))
+            json_query_set <- toJSON(query_set, auto_unbox = TRUE)
+            # Actualizamos database y session data
+            con$update(json_query_find, json_query_set)
+            session$userData$data$password = input$new_password
+            print("GUARDA???")
+            showNotification("Password successfully updated.", type = "default")
+            print(input$btn_save_password)
+            shinyjs::reset("btn_save_password")
+            
+        }
+        else {
+            showNotification(
+                "Incorrect current password",
+                type = "warning"
+            )
+        }
+    },ignoreInit=TRUE, ignoreNULL = TRUE, once = TRUE )
+}
 
 generalConfigInterfaceUI <- function(id)
 {
@@ -32,7 +81,7 @@ generalConfigInterfaceUI <- function(id)
     )
 
 }
-generalConfigInterface <- function(input, output, session,datos_reactive)
+generalConfigInterface <- function(input, output, session, con)
 {
     ns <- session$ns
     
@@ -51,7 +100,7 @@ generalConfigInterface <- function(input, output, session,datos_reactive)
     output$config_tab <- renderUI({
         div(
             # Encabezado
-            h1("Configuración de Usuario"),
+            h1("User data:"),
             # Input para el nombre de usuario
             fluidRow(
                 column(4, "User name"),
@@ -74,44 +123,16 @@ generalConfigInterface <- function(input, output, session,datos_reactive)
             )
         )
     })
+    
     observeEvent(input$btn_update_password, {
-        showModal(
-            modalDialog(
-                title = "Actualizar contraseña",
-                passwordInput(ns("old_password"), "Contraseña antigua:"),
-                passwordInput(ns("new_password"), "Nueva contraseña:", value = ""),
-                actionButton(ns("btn_save_password"), "Guardar"),
-                easyClose = TRUE
-            )
-        )
-    })
-    # Logic to update password
-    observeEvent(input$btn_save_password, {
-        old_password <- isolate(input$old_password)
-        new_password <- isolate(input$new_password)
-        # user <- user_data()
-        
-        # Verificar si la contraseña antigua ingresada coincide con la almacenada
-        if (old_password == session$userData$data$password) {
-            # Actualizar la contraseña en la base de datos (esto es un ejemplo, reemplaza con tu lógica real)
-            # Suponemos que 'user_id' es el identificador del usuario en tu colección MongoDB
-            # user_id <- "your_user_id"
-            # mongo_collection$update(user_id, list("$set" = list(password = new_password)))
-            
-            # Actualizar el valor de la contraseña en la sesión
-            # user$password <- new_password
-            # user_data(user)
-            
-            # Cerrar el modal después de actualizar
-            # removeModal()
-            print(new_password)
-            # Mostrar mensaje de éxito
-            showNotification("Contraseña actualizada con éxito.", type = "default")
-        } else {
-            # Mostrar mensaje de error si la contraseña antigua no coincide
-            showNotification("Contraseña antigua incorrecta. Inténtalo nuevamente.", type = "error")
-        }
-    })
-
+        showModal(modalDialog(id = "updateModal", changePassUI(ns("changePass"))))
+        callModule(changePass, "changePass", con = con)
+        shinyjs::reset("btn_update_password")
+    },ignoreInit = TRUE, ignoreNULL = TRUE, once=TRUE )
+    
 }
   
+
+
+
+

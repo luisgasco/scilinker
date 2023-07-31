@@ -166,7 +166,7 @@ server <- function(input, output, session) {
             output$output_test <- renderUI({
                 generalConfigInterfaceUI("y")
             })
-            callModule(generalConfigInterface, "y") #
+            callModule(generalConfigInterface, "y", con=con) #
             
         } else if (input$tabs == "about")
         {   
