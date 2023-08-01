@@ -33,7 +33,7 @@ generalValidationInterfaceUI <- function(id)
 
 }
 
-generalValidationInterface<- function(input, output, session)
+generalValidationInterface<- function(input, output, session, con)
 {
     ns <- session$ns
     
