@@ -26,4 +26,4 @@ UPDATE_ALL=FALSE
 #If running app in local : 
 DICCIONARY_ABS_PATH="~/scilinker/data/diccionario.tsv"
 #If running app in docker : 
-#DICCIONARY_ABS_PATH="/srv/shiny-server/bioMnorm/data/diccionario.tsv"
+#DICCIONARY_ABS_PATH="/srv/shiny-server/scilinker/data/diccionario.tsv"
