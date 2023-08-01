@@ -93,7 +93,7 @@ generalConfigInterface <- function(input, output, session, con)
     })
     output$documents <- renderValueBox({
         valueBox(
-            sum(length(session$userData$data$projects[[1]]$documents)), "documents", icon = icon("file"),
+            sum(lengths(session$userData$data$projects[[1]]$documents)), "documents", icon = icon("file"),
             color = "olive"
         )
     })
