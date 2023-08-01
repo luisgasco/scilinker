@@ -4,8 +4,10 @@
 vals <- reactiveValues(count=0)
 server <- function(input, output, session) {
     # Reactive variables
-    userState <- reactiveValues(user = NULL, loggedIn = FALSE, role = NULL,
-                                data = NULL, projects = NULL)
+    userState <- reactiveValues(user = NULL, loggedIn = FALSE, 
+                                role = NULL, data = NULL, 
+                                projects = NULL)
+    
     # Variable reactiva para controlar la visibilidad del módulo
     showModule <- reactiveVal(TRUE)
     
@@ -27,6 +29,7 @@ server <- function(input, output, session) {
             callModule(menuItemModule, "menu")
         }
     })
+    
     ## Login modeal dialog opening when the user clicks on the login button
     observeEvent(input$openLoginModal, {
         if (!userState$loggedIn)
@@ -66,7 +69,6 @@ server <- function(input, output, session) {
         }
     })
     
-    
     # Create connections with MongoDB
     con <- mongo(collection = mongo_user_collection,
                  db = mongo_database,
@@ -85,14 +87,11 @@ server <- function(input, output, session) {
                              url = paste0("mongodb://",mongo_host,":",mongo_port),
                              options = ssl_options(weak_cert_validation = TRUE)) 
     
-    
-    
-    # Contabiliza número de sessions
+    # Count number of sessions
     isolate(vals$count <- vals$count + 1)
     
     # When a session ends, decrement the counter.
     session$onSessionEnded(function(){
-        # We use isolate() here for the same reasons as above.
         isolate(vals$count <- vals$count - 1)
     })
     output$count <- renderText({
@@ -103,63 +102,63 @@ server <- function(input, output, session) {
     # Función reactiva para leer el contenido del archivo HTML
 
     
-    # Observador para actualizar la visibilidad de las páginas
+    # Observer to update thes pages when clicking options on sidebar
     observeEvent(input$tabs, {
-        if (input$tabs %in% session$userData$projects)
-        {
-            # If user click on tabs and these tabas are part of their projects
-            # render the annotator interface
-            output$output_test <- renderUI({
-                generalAnnotatorInterfaceUI("x")
-            })
-            callModule(generalAnnotatorInterface, "x") # antes se pasaba datos_reactive
+        if (input$tabs %in% session$userData$projects) {
+            # If user is annotator enter annotator interface
+            if (userState$role == "annotator"){
+                # Render annotator interface module
+                output$output_test <- renderUI({
+                    generalAnnotatorInterfaceUI("x")
+                })
+                callModule(generalAnnotatorInterface, "x") 
+                
+                # mongo user
+                query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
+                                                           userState$user, "\"}", 
+                                                           sep = ""))
+                # Update session data with user information
+                session$userData$user <- userState$user
+                session$userData$loggedIn <- TRUE
+                session$userData$role <- userState$role
+                session$userData$projects <- session$userData$projects
+                session$userData$current_project <- input$tabs
+                session$userData$annotation_db_endpoint <- con_annotations
+                session$userData$mentions_db_endpoint <- con_mentions
+                session$userData$documents_db_endpoint <- con_documents
+                session$userData$data <- query_mongo_user
+                
+                # ObserveEvent for full_text panel in annoator interface
+                observeEvent(input[["x-pannel_output-full_text"]], {
+                    if (input[["x-pannel_output-full_text"]] == TRUE)
+                    {
+                        shinyjs::show("x-texto_output-texto_output")
+                    } else
+                    {
+                        shinyjs::hide("x-texto_output-texto_output")
+                    }
+                })
+            } else if (userState$role == "admin"){
+                output$output_test <- renderUI({
+                    generalValidationInterfaceUI("y")
+                })
+                callModule(generalValidationInterface, "y")
+                
+                
+                query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
+                                                           userState$user, "\"}", 
+                                                           sep = ""))
+                session$userData$user <- userState$user
+                session$userData$loggedIn <- TRUE
+                session$userData$role <- userState$role
+                session$userData$projects <- session$userData$projects
+                session$userData$current_project <- input$tabs
+                session$userData$annotation_db_endpoint <- con_annotations
+                session$userData$mentions_db_endpoint <- con_mentions
+                session$userData$documents_db_endpoint <- con_documents
+                session$userData$data <- query_mongo_user
+            }
             
-            print(input$tabs)
-            h2(paste("Contenido de", input$tabs))
-            # Llamar al módulo para generar la interfaz gráfica
-
-            query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
-                                                       userState$user, "\"}", sep = ""))
-            
-            
-            session$userData$user <- userState$user
-            session$userData$loggedIn <- TRUE
-            session$userData$role <- userState$role
-            session$userData$projects <- session$userData$projects
-            session$userData$current_project <- input$tabs
-            session$userData$annotation_db_endpoint <- con_annotations
-            session$userData$mentions_db_endpoint <- con_mentions
-            session$userData$documents_db_endpoint <- con_documents
-            session$userData$data <- query_mongo_user
-            
-            
-            
-            
-            print("PROYECTOS SESSION")
-            print(session$userData$current_project )
-            print("FINALAQUI")
-            
-            # datos_reactive <- reactiveValues(data = loadData(session, query_mongo_user,
-            #                                                  userState$user, session$userData$current_project))
-            
-            
-            
-            
-            observeEvent(input[["x-pannel_output-full_text"]], {
-                if (input[["x-pannel_output-full_text"]] == TRUE)
-                {
-                    # reactive_values$show_text(TRUE)
-                    # reactive_values$need_context(TRUE)
-                    print("LLEGA_TRUE")
-                    shinyjs::show("x-texto_output-texto_output")
-                } else
-                {
-                    # reactive_values$show_text(FALSE)
-                    # reactive_values$need_context(TRUE)
-                    print("LLEGA_FALSE")
-                    shinyjs::hide("x-texto_output-texto_output")
-                }
-            })
             # MODULO ANOTACION
         } else if (input$tabs == "config")
         {
@@ -177,7 +176,10 @@ server <- function(input, output, session) {
             print("about")
         } else if (input$tabs == "users")
         {
-            print("users")
+            output$output_test <- renderUI({
+                userConfigUI("w")
+            })
+            callModule(userConfig, "w", con)
         } else
         {
             output$output_test <- renderUI({

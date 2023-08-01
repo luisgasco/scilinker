@@ -17,9 +17,11 @@ MONGODB_ANNOTATIONS_COLLECTION="anotaciones"
 TIMEOUT_SECONDS=1800
 # Root path
 # If running app in local:
-ABS_PATH_LOCAL = "~"
+ABS_PATH_LOCAL="~"
 # If running app in docker:
-#ABS_PATH_LOCAL = "/srv/shiny-server"
+#ABS_PATH_LOCAL="/srv/shiny-server"
+# Update mentions where are equal and don't need context
+UPDATE_ALL=FALSE
 # PATHS TO DATA
 #If running app in local : 
 DICCIONARY_ABS_PATH="~/scilinker/data/diccionario.tsv"

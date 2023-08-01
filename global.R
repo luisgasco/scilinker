@@ -40,11 +40,13 @@ base_path <- Sys.getenv("ABS_PATH_LOCAL")
 source(paste0(base_path,"/scilinker/modules/login.R"))
 source(paste0(base_path,"/scilinker/modules/sidebar.R"))
 source(paste0(base_path,"/scilinker/modules/module_annotation.R"))
+source(paste0(base_path,"/scilinker/modules/module_adminvalidation.R"))
+source(paste0(base_path,"/scilinker/modules/module_users.R"))
 source(paste0(base_path,"/scilinker/modules/module_config.R"))
 
 # If this variable is TRUE, the app will update all equal mentions assign to user 
 # (if they are not abbreviations or need context). NOT DEVELOP YET
-UPDATE_ALL = FALSE 
+UPDATE_ALL = as.logical(Sys.getenv("UPDATE_ALL"))
 
 # Function to verify user/password in mongodb database
 authenticate_user <- function(username, password, con)
