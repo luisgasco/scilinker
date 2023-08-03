@@ -5,22 +5,24 @@ library(jsonlite)
 library(dplyr)
 library(shinyWidgets)
 library(fontawesome)
-
 shinyjs::useShinyjs()
-print(getwd() )
+
+# Load submodules for annotation module
 source(paste0(base_path,"/scilinker/modules/error_handling.R"))
 source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_ui_utils.R"))
 source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_data_utils.R"))
 source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_backend_utils.R"))
 
-
+# General Annotator Interace module ----
+# Module to generate the graphical interface for normalization.
 generalAnnotatorInterfaceUI <- function(id)
 {
     ns <- NS(id)
     tabItem(
         tabName = "anotaciones", fluidRow(
             column(
-                8, box(
+                8, 
+                box(
                     width = 12, status = "danger",
                     height = 500, shinycssloaders::withSpinner(tableAnnotatorUI(ns("mytable")))
                 ),
@@ -30,7 +32,8 @@ generalAnnotatorInterfaceUI <- function(id)
                 )
             ),
             column(
-                4, box(
+                4,
+                box(
                     width = 12, height = 750,
                     pannelAnnotatorUI(ns("pannel_output"))
                 )
@@ -42,15 +45,18 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
 {
     ns <- session$ns
     
-    # Inicializo los datos_reactive y annotation_reactive, y después cada vez se cambie el proyecto
-    # se cambian
+    ## Initialize datos_reactive and annotation_reactive inside the Annotator module
+    # data_reactive are the mentions that the user must normalize for the project in question. 
+    # annotation_reactive are the annotations carried out by the user for the active project. 
+    # They are loaded at the beginning to avoid input/output flows with the database.
     datos_reactive <- reactiveValues(data = data.frame())
     annotation_reactive <- reactiveValues(
         data = data.frame()
     )
-    # sel_row reactive value
+    ## Initialize reactive value with their default values.
+    # Reactive value for the selected row in the table of UI.
     sel_row <- reactiveVal()
-    # Creamos reactive values
+    # Internal reactive values
     context_id <- reactiveVal()
     composite_id <- reactiveVal()
     abbrev_id <- reactiveVal()
@@ -60,70 +66,61 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     is_abb <- reactiveVal(FALSE)
     is_composite <- reactiveVal(FALSE)
     need_context <- reactiveVal(FALSE)
-    # Creamos lista de reactive_values para acceder 
-    reactive_values <- list(
-        context_id = context_id, composite_id = composite_id, abbrev_id = abbrev_id,
-        num_codes = num_codes, show_text = show_text, prev_annotated = prev_annotated,
-        is_abb = is_abb, is_composite = is_composite, need_context = need_context
-    )
+    # Put reactive values in a list to easily access them 
+    reactive_values <- list(context_id = context_id, composite_id = composite_id,
+                            abbrev_id = abbrev_id, num_codes = num_codes,
+                            show_text = show_text,prev_annotated = prev_annotated,
+                            is_abb = is_abb, is_composite = is_composite,
+                            need_context = need_context)
     
-    # Update reactive_data when changing project
+    # Loading modal while data is being prepared
     observeEvent(session$userData$current_project, {
-        showModal(modalDialog(tags$div(
-                                            style = "display: flex; flex-direction: column; align-items: center;",
-                                            tags$div(
-                                                style = "display: flex; align-items: center; margin-bottom: 10px;",
-                                                tags$img(src = 'small_logo.png', title = "small logo", height = "40px"), # Ajusta el valor de height para cambiar el tamaño de la imagen
-                                                tags$p(style = "font-weight: bold; text-align: center; margin-left: 0px;", "     Loading... This may take a while")
-                                            ),
-                                        tags$p(HTML('<img src="loading.gif">'))
-                                    ),
-                              footer=NULL, size="s", fade=TRUE))
-        print("LLEGA al observe_event_module_annotation")
-        # Reiniciar los datos reactivos cargando los datos del nuevo proyecto
+        # Show modal
+        showModal(modalDialog(tags$div(style = "display: flex; flex-direction: column; align-items: center;",
+                                       tags$div(style = "display: flex; align-items: center; margin-bottom: 10px;",
+                                                tags$img(src = "small_logo.png", title = "small logo", height = "40px"),
+                                                tags$p(style = "font-weight: bold; text-align: center; margin-left: 0px;",
+                                                       "Loading... This may take a while")
+                                                ), 
+                                       tags$p(HTML("<img src=\"loading.gif\">"))
+                                       ), 
+                              footer = NULL, size = "s", fade = TRUE)
+                  )
+        # Load data from database from current user and project using loadData function
         datos_reactive$data = loadData(session, session$userData$data, session$userData$user, session$userData$current_project)
+        # Load annotations done by the user in the current project using loadAnnotations function
         annotation_reactive$data = loadAnnotations(session, session$userData$user, session$userData$current_project)
         # Reinitialize reactive variables each time user change project
-        context_id(
-            gsub(
-                "[.#-]", "_", paste0("contextx_", datos_reactive$data[1, ]$document_id)
-            )
-        )
-        composite_id(
-            gsub(
-                "[.#-]", "_", paste0("compositex_", datos_reactive$data[1, ]$document_id)
-            )
-        )
-        abbrev_id()  
-        num_codes(1)    
-        show_text(FALSE) 
-        prev_annotated(FALSE) 
-        is_abb(FALSE)    
-        is_composite(FALSE)   
+        # TODO: Perhaps this is the problem of the application breaking when changing projects.
+        context_id(gsub("[.#-]", "_", paste0("contextx_", datos_reactive$data[1, ]$document_id)))
+        composite_id(gsub("[.#-]", "_", paste0("compositex_", datos_reactive$data[1, ]$document_id)))
+        abbrev_id()
+        num_codes(1)
+        show_text(FALSE)
+        prev_annotated(FALSE)
+        is_abb(FALSE)
+        is_composite(FALSE)
         need_context(FALSE)  
-        
-        print("fin_primer_observe")
-        
+        # After loading data, remove modal
         removeModal()
     }, ignoreNULL = FALSE)
     
     
-    # Realizar la consulta a la base de datos y obtener los
-    # resultados Unimos los datos de texto con el de menciones
-    # print(paste('outer = ', datos_reactive$data))
+    # Create proxy object to update datatable
     proxy <- dataTableProxy(ns("mytable"))
     
-    # Load diccionario. más adelante se hará leyendo de BB.DD
+    # Load tsv file dictionary. Later it will be done by reading from a collection in the database.
     diccionario <<- loadDict(abspath2dicc)
     
-    # cntinue
-    print(session$userData$projects)
+    # Show results for current user
+    # print(session$userData$projects)
     
-    # datos_annotation <<- isolate(annotation_reactive$data)
+    # Call tableAnnotator module (the module for the datatable)
     callModule(tableAnnotator, "mytable", datos_reactive, sel_row)
     callModule(
         textAnnotator, "texto_output", datos_reactive, sel_row, reactive_values
     )
+    # Call pannelAnnotator module (the module to build the right pannel with codes)
     callModule(
         pannelAnnotator, "pannel_output", datos_reactive, sel_row, reactive_values,
         annotation_reactive, proxy, diccionario
@@ -131,6 +128,8 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     
 }
 
+# Table Annotator module ----
+# Module to generate the table to show the mentions to be normalize
 tableAnnotatorUI <- function(id)
 {
     ns <- NS(id)
@@ -139,31 +138,36 @@ tableAnnotatorUI <- function(id)
 tableAnnotator <- function(input, output, session,datos_reactive,sel_row)
 {
     ns <- session$ns
+    # Observe the row that is clicked using the UI
     observe({
         sel_row(input$mytable_rows_selected)
     })
+   
+    # Show table on the interface applying some filters and ordering
     output$mytable = DT::renderDataTable({  
-        DT::datatable(datos_reactive$data,rownames=FALSE,
-                      options = list(
-                          deferRender = TRUE,
-                          scrollY = 400,
-                          scrollX=TRUE,
-                          scroller = TRUE,
-                          autoWidth = TRUE,
-                          columnDefs = list(list(visible=FALSE, targets=c( 6, 7, 8, 9, 10))),#2,
-                          order = list(list(1,'asc'))
-                      ),
+        DT::datatable(datos_reactive$data,
+                      rownames=FALSE,
+                      options = list(deferRender = TRUE,
+                                     scrollY = 400,
+                                     scrollX=TRUE,
+                                     scroller = TRUE,
+                                     autoWidth = TRUE,
+                                     columnDefs = list(list(visible=FALSE, targets=c( 6, 7, 8, 9, 10))),#2,
+                                     order = list(list(11,'asc'),list(1,'asc'))
+                                     ),
                       selection ="single",
-                      extensions = c("Scroller")) %>% #'Responsive',
-            DT::formatStyle( 'validated',
-                             target = 'row',
-                             backgroundColor = DT::styleEqual(c(0, 1,2), c('#f4f4f4', '#cbffe0','#fffddc')),
-                             fontWeight = 'bold')
+                      extensions = c("Scroller")) %>% 
+        DT::formatStyle( 'validated',
+                         target = 'row',
+                         backgroundColor = DT::styleEqual(c(0, 1,2), c('#f4f4f4', '#cbffe0','#fffddc')),
+                         fontWeight = 'bold')
     },server = TRUE
     )
     return(list(sel_row=sel_row)) # Return sel_row value to the parent module
 }
 
+# Text Annotator module ----
+# Module show the content of the document if needed.
 textAnnotatorUI <- function(id)
 {
     ns <- NS(id)
@@ -176,36 +180,32 @@ textAnnotator <- function(input, output, session, datos_reactive, sel_row, react
         {
             sel_row <- sel_row()
             ## Compute needed filters No need to re-select
-            ## thisrow_sel <- input$mytable_rows_selected Get
-            ## filename related to the mention from dataframe.
-            file_name <- unlist(datos_reactive$data[sel_row, ]$document_id)[1]  #'es-S0210-56912007000900007-3'
-            # Build the query
-            query_get_text <- paste0("{", "\"filename_id\"", ":\"", file_name, "\"}")
-            # Get Text
+            # Get filename_id of the selected mention
+            file_name <- unlist(datos_reactive$data[sel_row, ]$document_id)[1] 
+            # Get the text related to the current mention
             texto <- datos_reactive$data[sel_row, ]$text[1]
-            # DATA WILL BE SAVE WITH A BUTTON If row is not selected,
-            # don't show anything.
+            # If sel_row is NULL (not clicked)
             if (!is.null(sel_row) )
-            {
-                HTML(
-                    calcula_texto(TRUE, datos_reactive$data[sel_row, ], texto, "clase_show")
-                )
+            {   # Compute the html text by marking the mention in yellow
+                HTML(calcula_texto(TRUE, datos_reactive$data[sel_row, ], texto, "clase_show"))
             }
         }
     )
 }
 
+# Pannel Annotator module ----
+# This module builds the right panel in the user interface that will be used to 
+# select/normalize each mention and display the previously normalized ones
 pannelAnnotatorUI <- function(id)
 {
     ns <- NS(id)
     uiOutput(ns("info_code"))
 }
-pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reactive_values,annotation_reactive,proxy, diccionario){
+pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reactive_values,annotation_reactive,proxy, diccionario)
+{
     ns <- session$ns
     
-    
-    
-    # Reactivity change of row:
+    # Observe event to update reactive values used to build the UI
     observeEvent(sel_row(),{
         reactive_values$is_abb(FALSE)
         reactive_values$is_composite(FALSE)
@@ -215,8 +215,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         reactive_values$num_codes(1)
     })
     
-    
-    # Reactivity need_context button.  # FUNCIONA
+    # Observe event to enable/disable the "full_text" button
     observeEvent(input[[reactive_values$context_id()]],{
         if (input[[reactive_values$context_id()]]==TRUE){
             shinyjs::enable("full_text")
@@ -225,24 +224,24 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         }
     })
     
-    # # Reactivity is_composite buttons:
+    # Observe event to enable buttons related to composite normalization
     observeEvent(input[[reactive_values$composite_id()]],{
-        print("Observe - is_composite")
         if (input[[reactive_values$composite_id()]]==TRUE){
             shinyjs::enable("number_codes")
             shinyjs::enable("update_codes")
             updateAwesomeCheckbox(session, reactive_values$composite_id(),TRUE)
-            print("Observe - is_composite - TRUE")
-            # reactive_values$is_composite(TRUE)
+            # Logs for tracing errors
+            # print("Observe - is_composite - TRUE")
         }else if(input[[reactive_values$composite_id()]]==FALSE){
             shinyjs::disable("number_codes")
             shinyjs::disable("update_codes")
-            print("Observe - is_composite - FALSE")
-            print(reactive_values$composite_id())
+            # Logs for tracing errors
+            # print("Observe - is_composite - FALSE")
             updateAwesomeCheckbox(session, reactive_values$composite_id(),FALSE)
-            # reactive_values$is_composite(FALSE)
         }
     }, ignoreNULL = TRUE)
+    
+    # Observe event to update reactive values needed to generate code annotation panels
     observeEvent(input[["update_codes"]],{
         updateNumericInput(session,"number_codes",value = input[["number_codes"]])
         reactive_values$num_codes(input[["number_codes"]])
@@ -250,76 +249,78 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         reactive_values$is_composite(TRUE)
         reactive_values$prev_annotated(input[["previously_annotated"]])
         reactive_values$need_context(input[["need_context"]])
-        # Actualizamos data frame paraque no haya problemas al guardar datos
+        # We update the data frame so that there are no problems when saving data.
         update_logical_values_df(input,session, annotation_reactive,proxy,sel_row(),datos_reactive,reactive_values)
-        # Actualizar is_composite si num_codes == 1
+        # If num_codes is 1, update the composite input (to false)
         if(input[["number_codes"]]==1){
             reactive_values$is_composite(FALSE)
             updateAwesomeCheckbox(
                 session = session, inputId = reactive_values$composite_id(),
                 value = FALSE
             )
-            
         }
-        
-        
     })
     
-    # Reactivity previously_annotated button
+    # Observe event to enable/disable the code candidate list if previously 
+    # annotated is not clicked
     observeEvent(input[["previously_annotated"]],{
-        print("Observe - previously_annotated")
-        # Si el valor es TRUE
         if (input[["previously_annotated"]] ){
-            #Deshabilitamos el bloque de anotaciones
+            # If True disable the candidate code list
             shinyjs::disable("candidate_list_elem")
-            print("Observe - previously_annotated - TRUE")
+            # Logs for tracing errors
+            # print("Observe - previously_annotated - TRUE")
         }
         else{
+            # If false enable the candidate code list
             shinyjs::enable("candidate_list_elem")
-            print("Observe - previously_annotated - FALSE")
+            # Logs for tracing errors
+            # print("Observe - previously_annotated - FALSE")
         }
-        
     })
     
+    # Render the UI for the actual mention
     output$info_code <- renderUI({
-        print(sel_row())
-        
+        # Logs for tracing errors
+        # print(sel_row())
+        # If user click on a row of the datatable (sel_row!=NULL)
         if(!is.null(sel_row())){
-            # Filter dataframe
+            # Filter dictionary
             dicc_filt <- filtra_dict(datos_reactive$data,diccionario,sel_row()) 
-            print(reactive_values)
-            # Get input ids
+            # Update reactive values needed for the input ids using data of the actual mention
             reactive_values$abbrev_id(gsub("[.#-]","_",paste0("abbrevx_",datos_reactive$data[sel_row(),]$document_id,"#",datos_reactive$data[sel_row(),]$span_ini,"#",datos_reactive$data[sel_row(),]$span_end)))
             reactive_values$composite_id(gsub("[.#-]","_",paste0("compositex_",datos_reactive$data[sel_row(),]$document_id,"#",datos_reactive$data[sel_row(),]$span_ini,"#",datos_reactive$data[sel_row(),]$span_end)))
             reactive_values$context_id(gsub("[.#-]","_",paste0("contextx_",datos_reactive$data[sel_row(),]$document_id,"#",datos_reactive$data[sel_row(),]$span_ini,"#",datos_reactive$data[sel_row(),]$span_end)))
-            ## RENDER PART OF THE PANEL
-            asd <<- datos_reactive$data
-            asd2 <<- annotation_reactive$data
-            asd22<<- dicc_filt
+            # Logs for tracing errors
+            # asd <<- datos_reactive$data
+            # asd2 <<- annotation_reactive$data
+            # asd22<<- dicc_filt
+            
             # Función para generar la interfaz reactiva para cada uno de las menciones.
             # Cada mención tendrá su propia lista de codigos, etc.
             # Los datos_reactivos serán data_reactive$data
             # Seleccionamos sel_row(). Si el identificador está en annotation_reactive
-            # cambiamos los reactive_values y los cargamos en la interfaz
-            fila_elegida = datos_reactive$data[sel_row(),]
-            annotation_id_current = paste0(fila_elegida$document_id,"_",fila_elegida$span_ini, "_", fila_elegida$span_end)
-            print("CURRENT ANNOTATION")
-            print(annotation_id_current)
-            print(annotation_reactive$data)
-            # reactive_values$show_text(FALSE)
-            # Verificar si annotation_reactive$data está vacío
+            # cambiamos los reactive_values y los cargamos en la interfazç
+            
+            # Obtain current annotation_id by document_id and span_ini/span_end
+            annotation_id_current <- paste0(datos_reactive$data[sel_row(),]$document_id,"_",
+                                            datos_reactive$data[sel_row(),]$span_ini, "_",
+                                            datos_reactive$data[sel_row(),]$span_end)
+            # Logs for tracing errors
+            # print("CURRENT ANNOTATION")
+            # print(annotation_id_current)
+            # print(annotation_reactive$data)
+            
+            # If this is not the first annotation of the user in this project
+            # (annotation_reactive has more dan one-row).
             if (nrow(annotation_reactive$data) > 0) {
+                # Get the existing annotation if possible
                 anotacion_existente <- annotation_reactive$data %>% 
-                    filter(user_id == session$userData$user,
-                           annotation_id == annotation_id_current)
-                print(nrow(anotacion_existente))
+                                        filter(user_id == session$userData$user,
+                                               annotation_id == annotation_id_current)
+                
+                # If there is an annotation, update reactive values to be used
+                # when generating the normalization panel
                 if (nrow(anotacion_existente) == 1) {
-                    print("DATOS_DE_INICIO")
-                    print("reactive")
-                    print(reactive_values$num_codes())
-                    print("annotation")
-                    print(anotacion_existente$num_codes)
-                    print("TOCA ACTUALIZAR")
                     reactive_values$prev_annotated(anotacion_existente$previously_annotated)
                     reactive_values$is_abb(anotacion_existente$is_abrev)
                     reactive_values$is_composite(anotacion_existente$is_composite)
@@ -327,46 +328,47 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                     reactive_values$num_codes(anotacion_existente$num_codes)
                     reactive_values$show_text(TRUE)
                     reactive_values$show_text(FALSE)
-                    print("FALLO_ACTUAL_FUERA_GENERATE_PANEL")
-                    print(anotacion_existente)
-                    print(anotacion_existente %>% select(codes, sem_rels))
-                    test_dicc_filt_erase <<- dicc_filt
-                    anotacion_existente_output <<- anotacion_existente
-                    output_reactive_values <<- reactive_values
+                    
+                    # Logs for tracing errors
+                    # test_dicc_filt_erase <<- dicc_filt
+                    # anotacion_existente_output <<- anotacion_existente
+                    # output_reactive_values <<- reactive_values
                     # browser()
+                    # Generate panel with update=TRUE 
                     generate_panel(ns, datos_reactive, reactive_values, dicc_filt, sel_row(), anotacion_existente %>% select(codes, sem_rels), update = TRUE)
                 } else {
-                    
+                    # If there is not existing annotation, we will call to 
+                    # generate panel with update=FALSE
                     generate_panel(ns, datos_reactive, reactive_values, dicc_filt, sel_row(), anotacion_existente, update = FALSE)
                 }
             } else {
-                
-                # Si annotation_reactive$data está vacío, se llama a generate_panel con update=FALSE
+                # If this is the first annotation of the user, annotation_reactive
+                # will be empty and the code will generate the normalization panel using
+                # update=FALSE with default annotation values (NULL)
                 generate_panel(ns, datos_reactive, reactive_values, dicc_filt, sel_row(), NULL, update = FALSE)
             }
-            
-            
-            
         }
     })
     
-    # Reactivity save_data button
+    # Observe event to update internal dataframes and save data in the database
     observeEvent(input[["save_data"]],{
-        print("Observe - save_data")
+        # Filter dictionary
         dicc_filt <- filtra_dict(datos_reactive$data,diccionario, sel_row())
-        dicc_filt_OUT<<- dicc_filt
-        print("llega aquí")
-        
-        ## INPUT VALIDATION
+        # Logs for tracing errors
+        # print("Observe - save_data")
+        # dicc_filt_OUT<<- dicc_filt
+
+        # Code to validate input (to see if there are errors and inconsistencies
+        # when introducing data)
         error_occurred <- reactiveVal(FALSE)
         input_validation(input, dicc_filt, reactive_values,datos_reactive, sel_row(), error_occurred)
-        # Si la bandera de error_occurred es TRUE, salimos del observeEvent
+        # If error_occured() is TRUE, we leave the observeEvent to give the user
+        # the posibility to fix it
         if (error_occurred()) {
             return()
         }
         
-        # First, let's read the data!
-        # Iteramos para los valores
+        # Get and prepare codes and relations from the UI
         code_list <- list()
         semrel_list <- list()
         code_list <- lapply(1:input[["number_codes"]], function(i) {
@@ -429,15 +431,15 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
             }
             return(semrel_list)
         })
-        
         code_list <- unlist(code_list)
         semrel_list <- unlist(semrel_list)
+        # Logs for tracing errors
+        # print(paste0("Lista de códigos seleccionada: ", code_list))
+        # print(paste0("Lista de rels seleccionada: ", semrel_list))
         
-        print(paste0("Lista de códigos seleccionada: ", code_list))
-        print(paste0("Lista de rels seleccionada: ", semrel_list))
-        
-        # ACtualizamos datos reactivos
-        # Si user toca save, cambiamos valor de "user_id", "validated" y "previously_annotated". Además cambiamos valor de validated_by que corresponda.
+        # Update mentions Dataframe (datos_reactive)
+        # This code will change the "user_id","validated" and "previously_annotated"
+        # values. This will also update the "validated_by" value for the current user
         datos_reactive$data[sel_row(),] <- datos_reactive$data %>%
             filter(document_id == datos_reactive$data$document_id[sel_row()],
                    span_ini == datos_reactive$data$span_ini[sel_row()],
@@ -445,30 +447,35 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
             mutate(user_id = session$userData$user,
                    validated = ifelse(input[["previously_annotated"]], 2, 1),
                    previously_annotated = ifelse(input[["previously_annotated"]], TRUE, FALSE))
-        # Tomamos valor new_state y new_preannotated para guardar dentro del validated_by
+        
+        # Get the new sate (1 or 2) of the normalized mention
         new_state <- datos_reactive$data %>%  filter(user_id == session$userData$user,
                                                      document_id == datos_reactive$data$document_id[sel_row()],
                                                      span_ini == datos_reactive$data$span_ini[sel_row()],
                                                      span_end == datos_reactive$data$span_end[sel_row()] ) %>% select(validated)
+        # Get the value of previously_annotated for the normalized mention
         new_prevannotated <- datos_reactive$data %>%  filter(user_id == session$userData$user,
                                                              document_id == datos_reactive$data$document_id[sel_row()],
                                                              span_ini == datos_reactive$data$span_ini[sel_row()],
                                                              span_end == datos_reactive$data$span_end[sel_row()] ) %>% select(previously_annotated)
         
-        # Actualizamos el validated_by dataframe
+        # Update the validated_by field for the current user in the dataframe
         datos_reactive$data[sel_row(),]$validated_by[[1]] <- datos_reactive$data[sel_row(),]$validated_by[[1]] %>%
-            mutate(state= ifelse(user_id==session$userData$user,new_state$validate$state,state),
-                   previously_annotated = ifelse(user_id==session$userData$user,new_prevannotated$previously_annotated$previously_annotated,previously_annotated))
+            mutate(state= ifelse(user_id==session$userData$user,new_state$validate,state),
+                   previously_annotated = ifelse(user_id==session$userData$user,new_prevannotated$previously_annotated,previously_annotated))
         
         
-        # Actualizamos datos menciones TODO
-        # Checkamos si existe un identificador de mención ya guardado dentro. 
-        # Si existe lo actualizamos
+        # Update annotation dataframe
+        # Generate a current annotation_id
         current_annotation_id <- paste0(datos_reactive$data[sel_row(),]$document_id,"_",datos_reactive$data[sel_row(),]$span_ini,"_",datos_reactive$data[sel_row(),]$span_end)
+        # Check if this annotation existed before in the dataframe
         is_present <- current_annotation_id %in% annotation_reactive$data$annotation_id[annotation_reactive$data$user_id == session$userData$user]
-        print(paste0("ESTE ELEMENTO ESTá PRESENTE? ", is_present))
+        # Logs for tracing errors
+        # print(paste0("ESTE ELEMENTO ESTá PRESENTE? ", is_present))
+        # If anotation is present in the dataframe, we update the data
         if(is_present){
-            print("Datos existentes en el annotation_data. Actualizamos")
+            # Logs for tracing errors
+            # print("Datos existentes en el annotation_data. Actualizamos")
             annotation_reactive$data <- annotation_reactive$data %>% 
                 mutate(
                     project_id = ifelse(user_id==session$userData$user &
@@ -507,23 +514,17 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                                            document_id == datos_reactive$data$document_id[sel_row()] &
                                            span_ini == datos_reactive$data$span_ini[sel_row()] &
                                            span_end == datos_reactive$data$span_end[sel_row()], list(semrel_list), sem_rels),
-                    
-                    
                 )
-            
-            
-            asdasdasdafter <<- annotation_reactive$data
+
             
         }else{
-            print("Datos NO existentes en el annotation_data. INCORPORAMOS")
-            print("USUARIO_ACTUAL:")
-            print(session$userData$user)
-            print(annotation_reactive$data)
-            print("VALORES code_list y sem_rels")
-            print(list(code_list))
-            print(list(semrel_list))
-            asd_code_list <<- code_list
-            asd_semrel_list <<- semrel_list
+            # If anotation is NOT present in the dataframe, we incorpore a new row
+            # Logs for tracing errors
+            # print("Datos NO existentes en el annotation_data. INCORPORAMOS")
+            # Logs for tracing errors (to see the format of code and semrel list)
+            # asd_code_list <<- code_list
+            # asd_semrel_list <<- semrel_list
+            # Generate the row with the data
             new_row<- list(
                 project_id= session$userData$current_project,
                 document_id = datos_reactive$data$document_id[sel_row()],
@@ -542,38 +543,31 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
             )
             names(new_row$codes) <- "codes"
             names(new_row$sem_rels) <- "sem_rels"
-            # VAMOS A VER CUAL ES EL RESULTADO AL GUARDAR EN PREVIOUSLY_ANNOTATED ==TRUE e intentar replicar ese formato en codes y sem_rels
-            # con la condición anterior
-            print("PRINTEMAMOS NEW_ROW")
-            print(new_row)
-            # SI input[["previously_annotated"]] es true y nrows(annotation_reactiva$data es 0, hay que modificar los sem_rels)
+            # Include the row into annotation_reactive dataframe
             annotation_reactive$data <- rbind(annotation_reactive$data, new_row)
-            print("USUARIO_ACTUAL_FINAL")
-            
         }
+        # Logs for tracing errors
+        # asdasdasd <<- annotation_reactive$data
         
-        asdasdasd <<- annotation_reactive$data
-        
-        # Actualizamos tabla
+        # Update the datatable to see changes
         proxy %>% DT::replaceData(datos_reactive$data)
-        asdasdasdasdsadasd_Despues<<-datos_reactive$data
+        
+        # Get current annotation in the dataframe to save into database
         current_annotation <- annotation_reactive$data%>% filter(annotation_id == current_annotation_id,
                                                                  project_id == session$userData$current_project,
                                                                  user_id == session$userData$user)
         
-        # Guardamos la anotación en annotation collection
+        # Save the annotation in annotation collection
         save_annotation_in_db(session$userData$annotation_db_endpoint,current_annotation, datos_reactive$data$span[sel_row()],UPDATE_ALL)
-        print("ANOTACION GUARDADA")
-        # Actualizamos el estado en menciones collection (cambiando el campo asociado al user_id dentro de validated_by)
+        # print("ANOTACION GUARDADA")
+        
+        # Update the status in mentions collection (changing the field associated to the user_id inside validated_by)
         update_mention_in_db(session$userData$mentions_db_endpoint,datos_reactive$data[sel_row(),],session$userData$user, UPDATE_ALL)
-        print("MENCION ACTUALIZADA")
+        # print("MENCION ACTUALIZADA")
+        
+        # Update reactive value of prev_annotated
         reactive_values$prev_annotated(input[["previously_annotated"]])
     })
-    
-    
 }
-    
-    # Esta para la de update mention https://sharegpt.com/c/mRSpjko
-
 
 

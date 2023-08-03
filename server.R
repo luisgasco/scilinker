@@ -97,10 +97,6 @@ server <- function(input, output, session) {
     output$count <- renderText({
         paste0("Number of sessions: ", vals$count)
     })
-
-    
-    # Función reactiva para leer el contenido del archivo HTML
-
     
     # Observer to update thes pages when clicking options on sidebar
     observeEvent(input$tabs, {
@@ -139,15 +135,17 @@ server <- function(input, output, session) {
                     }
                 })
             } else if (userState$role == "admin"){
+                # Render validation interface module
                 output$output_test <- renderUI({
                     generalValidationInterfaceUI("y")
                 })
                 callModule(generalValidationInterface, "y",con)
                 
-                
+                # mongo user
                 query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
                                                            userState$user, "\"}", 
                                                            sep = ""))
+                # Update session data with user information
                 session$userData$user <- userState$user
                 session$userData$loggedIn <- TRUE
                 session$userData$role <- userState$role
@@ -159,7 +157,7 @@ server <- function(input, output, session) {
                 session$userData$data <- query_mongo_user
             }
             
-            # MODULO ANOTACION
+            
         } else if (input$tabs == "config")
         {
             output$output_test <- renderUI({

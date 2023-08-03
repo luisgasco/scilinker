@@ -14,10 +14,10 @@ loadData <- function(session,query_mongo_user, user_ide, project_id){
     output = menciones_text %>% left_join(documentos_text,by="document_id")%>%
         filter(sapply(validated_by, function(df) any(df$user_id == user_ide))) %>%
         mutate(
-            user_id = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% select(user_id) ),
-            validated = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% select(state) ),
-            previously_annotated =  sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% select(previously_annotated)),
-            no_code = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% select(no_code))
+            user_id = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% pull(user_id) ),
+            validated = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% pull(state) ),
+            previously_annotated =  sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% pull(previously_annotated)),
+            no_code = sapply(validated_by, function(df) df %>% filter(user_id==user_ide) %>% pull(no_code))
         ) %>%
         rename("span"="text.x",
                "text" = "text.y",

@@ -12,10 +12,7 @@ library(fontawesome)
 library(RColorBrewer)
 library(stringr)
 library(data.table)
-
 shinyjs::useShinyjs()
-
-
 
 # Change to false if running on docker
 LOCAL = TRUE 
