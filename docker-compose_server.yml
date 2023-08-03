@@ -6,7 +6,6 @@ services:
       context: ./
       dockerfile: scilinker_dockerfile
     ports:
-      - 3838:3838
-      - 27017:27017
+      - 8002:3838
     network_mode: bridge
     restart: always

@@ -29,7 +29,7 @@ RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 
 
 #Install
-RUN rm -r /srv/shiny-server/* && mkdir -p /srv/shiny-server/scilinker/renv && mkdir -p /srv/shiny-server/scilinker/data && mkdir -p /srv/shiny-server/scilinker/www && chown -R shiny:shiny /srv/shiny-server/scilinker
+RUN rm -r /srv/shiny-server/* && mkdir -p /srv/shiny-server/scilinker/renv && mkdir -p /srv/shiny-server/scilinker/data &&  mkdir -p /srv/shiny-server/scilinker/modules &&  mkdir -p /srv/shiny-server/scilinker/modules/annotation_utils && mkdir -p /srv/shiny-server/scilinker/www && chown -R shiny:shiny /srv/shiny-server/scilinker
 
 WORKDIR scilinker/
 RUN pwd && echo "output pwd asv" 
@@ -48,7 +48,8 @@ COPY server.R /srv/shiny-server/scilinker/
 COPY renv/* /srv/shiny-server/scilinker/renv/
 COPY data/* /srv/shiny-server/scilinker/data/
 COPY www/* /srv/shiny-server/scilinker/www/
-
+COPY modules/annotation_utils/* /srv/shiny-server/scilinker/modules/annotation_utils/
+COPY modules/* /srv/shiny-server/scilinker/modules/
 
 
 WORKDIR /srv/shiny-server/scilinker

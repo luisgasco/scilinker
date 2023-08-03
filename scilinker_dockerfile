@@ -19,8 +19,10 @@ RUN apt-get -y install vim nano
 
 ARG CACHEBUST=1
 
+RUN pwd && echo "output pwd asv" 
+
 # GET FILES
-RUN git clone https://github.com/luisgasco/scilinker.git
+RUN git clone https://github.com/luisgasco/scilinker.git && echo "output pwd asv" 
 
 # ENVIRONMMENT
 ENV RENV_VERSION 0.17.3
@@ -31,7 +33,7 @@ RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 #Install
 RUN rm -r /srv/shiny-server/* && mkdir -p /srv/shiny-server/scilinker/renv && mkdir -p /srv/shiny-server/scilinker/data &&  mkdir -p /srv/shiny-server/scilinker/modules &&  mkdir -p /srv/shiny-server/scilinker/modules/annotation_utils && mkdir -p /srv/shiny-server/scilinker/www && chown -R shiny:shiny /srv/shiny-server/scilinker
 
-WORKDIR scilinker/
+WORKDIR /scilinker
 RUN pwd && echo "output pwd asv" 
 RUN ls -lh && echo "Ofasfasfautput of ls command above aasf" 
 
