@@ -5,9 +5,10 @@ library(jsonlite)
 library(dplyr)
 library(shinyWidgets)
 library(fontawesome)
-
 shinyjs::useShinyjs()
 
+
+# Aux. function to validate old password and new password
 validate_password <- function(old_password, new_password, db_password){
     if (old_password == db_password) {
         return(TRUE)
@@ -17,7 +18,10 @@ validate_password <- function(old_password, new_password, db_password){
     
 }
 
-changePassUI  <- function(id){
+# changePass module  ----
+# Module to manage the change of user password
+changePassUI  <- function(id)
+{
     ns <- NS(id)
     tagList(
             title = "Update password",
@@ -26,26 +30,28 @@ changePassUI  <- function(id){
             actionButton(ns("btn_save_password"), "Save")
     )    
 }
-
-changePass <- function(input, output, session,con) {
+changePass <- function(input, output, session,con)
+{
     ns <- session$ns
-    
+    # If btn_save_password is clicked
     observeEvent(input$btn_save_password, {
+        # Show UI data and validate current passowrd
         valor_entrada = validate_password(input$old_password, input$new_password, session$userData$data$password)
         if (valor_entrada) {
-            # Si el usuario y la contraseña son correctos, cerrar el modal y mostrar un mensaje de bienvenida
-            # removeModal()  # Cerrar el modal
+            # If the old password are correct
+            # Query the user data in the database
             query_find <- list(user_name = session$userData$data$user)
             json_query_find <- toJSON(query_find, auto_unbox = TRUE)
-            # Construye la consulta como un diccionario en R
+            # Upload the password field
             query_set <- list("$set" = list("password" = input$new_password))
             json_query_set <- toJSON(query_set, auto_unbox = TRUE)
-            # Actualizamos database y session data
             con$update(json_query_find, json_query_set)
+            # Update the session data
             session$userData$data$password = input$new_password
-            print("GUARDA???")
             showNotification("Password successfully updated.", type = "default")
-            print(input$btn_save_password)
+            # Logs for tracing errors
+            # print("Contraseña guardada")
+            # print(input$btn_save_password)
             shinyjs::reset("btn_save_password")
             
         }
@@ -58,6 +64,8 @@ changePass <- function(input, output, session,con) {
     },ignoreInit=TRUE, ignoreNULL = TRUE, once = TRUE )
 }
 
+# logoutModule module  ----
+# Module to manage the logout process.
 generalConfigInterfaceUI <- function(id)
 {
     ns <- NS(id)
@@ -84,19 +92,21 @@ generalConfigInterfaceUI <- function(id)
 generalConfigInterface <- function(input, output, session, con)
 {
     ns <- session$ns
-
+    # Generate content for ValueBox with number of projects associated to the user
     output$projects <- renderValueBox({
         valueBox(
             length(session$userData$data$projects[[1]]$project), "Projects", icon = icon("folder"),
             color = "purple"
         )
     })
+    # Generate content for ValueBox with number of documents associated to the user
     output$documents <- renderValueBox({
         valueBox(
             sum(lengths(session$userData$data$projects[[1]]$documents)), "documents", icon = icon("file"),
             color = "olive"
         )
     })
+    # Generate UI to show user data and password change button
     output$config_tab <- renderUI({
         div(
             # Encabezado
@@ -123,13 +133,12 @@ generalConfigInterface <- function(input, output, session, con)
             )
         )
     })
-    
+    # Observe Event to generate the modal with fields to change the user password
     observeEvent(input$btn_update_password, {
         showModal(modalDialog(id = "updateModal", changePassUI(ns("changePass"))))
         callModule(changePass, "changePass", con = con)
         shinyjs::reset("btn_update_password")
     },ignoreInit = TRUE, ignoreNULL = TRUE, once=TRUE )
-    
 }
   
 

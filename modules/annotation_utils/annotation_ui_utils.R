@@ -1,11 +1,14 @@
-# Obten lista de sinonimos en formato output dada una lista de strings
+## AUX functions to generate annotation panel
+# TODO: Refactor code.
+
+# Get list of synonyms in output format given a list of strings
 get_list_sins <- function(lista_sinonimos){
     lista = div(
         lapply(1:length(lista_sinonimos), function(j) {
             p(HTML(paste0(j,". ",lista_sinonimos[j])))}))
     return(lista)
 }
-# Genera el output box para cada concepto
+# Generates the output code box for each concept
 code_box2<- function(termino, sem_tag, codigo, lista_sinonimos_html, icon = NULL, color = "aqua", width = 4, href = NULL){
     boxContent <- div(class = "estilo_sct",
                       div(class="dot"),
@@ -31,109 +34,110 @@ code_box2<- function(termino, sem_tag, codigo, lista_sinonimos_html, icon = NULL
     )
 }
 
-
-# UI codes
+# Generate the UI with a list of candidate codes
 listcodes <- function(ns,id_code, datos_reactive, reactive_values, dicc_filt,sel_row,current_annotation, update ){
-    # fluidRow(
-    if (update == FALSE){
-        box(width = 12,
-            class = "12_especial", 
-            tags$div(style = "overflow-y: scroll;  max-height:300px",
-                     tags$table(style="width:100%",
-                                tags$colgroup(
-                                    tags$col(span="1",style="width: 85%;"),
-                                    tags$col(span="1",style="width: 7%;"),
-                                    tags$col(span="1",style="width: 8%;")
-                                ),
-                                tags$tr(style="position: sticky;top: 0px; background-color: white;",
-                                        tags$th("code", style="position: None;"),
-                                        tags$th("check", style="position: None;"),
-                                        tags$th("sem_tag", style="position: None;")
-                                ),
-                                lapply(1:nrow(dicc_filt), function(i) {
-                                    lista_sinonimos <- unlist(dicc_filt$sinonimo.y[i])
-                                    lista_sinonimos_html = get_list_sins(lista_sinonimos)
-                                    tags$tr(
-                                        tags$td(
-                                            code_box2(codigo = dicc_filt$code[i], 
-                                                      termino=dicc_filt$term[i],
-                                                      sem_tag = dicc_filt$semantic_tag[i],
-                                                      lista_sinonimos =lista_sinonimos_html,
-                                                      href = dicc_filt$url[i],
-                                                      width = 12)
-                                        ),
-                                        tags$td(
-                                            prettyCheckbox(inputId = ns(gsub("[.#-]","_",paste0("code_num_",id_code,"_check_",dicc_filt$code[i],"_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row]))),
-                                                           label = "",
-                                                           value = FALSE,#if(code==dicc_filt$code[i]) TRUE else FALSE,
-                                                           icon = icon("check"),
-                                                           status = "success",
-                                                           animation = "rotate",
-                                                           bigger = TRUE)
-                                        ),
-                                        tags$td(
-                                            prettyRadioButtons(inputId = ns(gsub("[.#-]","_",paste0("code_num_",id_code,"_rel_",dicc_filt$code[i],"_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row]))),
-                                                               label= "",
-                                                               choices = c("EXACT", "NARROW","NO_IDEA"),
-                                                               selected = "",#if ((code==dicc_filt$code[i])&(sem_rel %in% c("EXACT", "NARROW","NO_IDEA"))) sem_rel else "",
+    if (update == FALSE)
+    {
+            box(width = 12,
+                class = "12_especial", 
+                tags$div(style = "overflow-y: scroll;  max-height:300px",
+                         tags$table(style="width:100%",
+                                    tags$colgroup(
+                                        tags$col(span="1",style="width: 85%;"),
+                                        tags$col(span="1",style="width: 7%;"),
+                                        tags$col(span="1",style="width: 8%;")
+                                    ),
+                                    tags$tr(style="position: sticky;top: 0px; background-color: white;",
+                                            tags$th("code", style="position: None;"),
+                                            tags$th("check", style="position: None;"),
+                                            tags$th("sem_tag", style="position: None;")
+                                    ),
+                                    lapply(1:nrow(dicc_filt), function(i) {
+                                        lista_sinonimos <- unlist(dicc_filt$sinonimo.y[i])
+                                        lista_sinonimos_html = get_list_sins(lista_sinonimos)
+                                        tags$tr(
+                                            tags$td(
+                                                code_box2(codigo = dicc_filt$code[i], 
+                                                          termino=dicc_filt$term[i],
+                                                          sem_tag = dicc_filt$semantic_tag[i],
+                                                          lista_sinonimos =lista_sinonimos_html,
+                                                          href = dicc_filt$url[i],
+                                                          width = 12)
+                                            ),
+                                            tags$td(
+                                                prettyCheckbox(inputId = ns(gsub("[.#-]","_",paste0("code_num_",id_code,"_check_",dicc_filt$code[i],"_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row]))),
+                                                               label = "",
+                                                               value = FALSE,#if(code==dicc_filt$code[i]) TRUE else FALSE,
                                                                icon = icon("check"),
                                                                status = "success",
-                                                               animation = "jelly")
+                                                               animation = "rotate",
+                                                               bigger = TRUE)
+                                            ),
+                                            tags$td(
+                                                prettyRadioButtons(inputId = ns(gsub("[.#-]","_",paste0("code_num_",id_code,"_rel_",dicc_filt$code[i],"_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row]))),
+                                                                   label= "",
+                                                                   choices = c("EXACT", "NARROW","NO_IDEA"),
+                                                                   selected = "",#if ((code==dicc_filt$code[i])&(sem_rel %in% c("EXACT", "NARROW","NO_IDEA"))) sem_rel else "",
+                                                                   icon = icon("check"),
+                                                                   status = "success",
+                                                                   animation = "jelly")
+                                            )
                                         )
-                                    )
-                                })
-                                
-                     ),
-                     box(width = 12,
-                         tags$tr(
-                             tags$td(
-                                 awesomeCheckbox(inputId = ns(paste0("code_num_",id_code,"_no_code_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
-                                                 label = "Code not found in candidates", 
-                                                 value = FALSE#no_code
+                                    })
+                                    
+                         ),
+                         box(width = 12,
+                             tags$tr(
+                                 tags$td(
+                                     awesomeCheckbox(inputId = ns(paste0("code_num_",id_code,"_no_code_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
+                                                     label = "Code not found in candidates", 
+                                                     value = FALSE#no_code
+                                     ),
+                                     awesomeCheckbox(inputId = ns(paste0("code_num_",id_code,"_no_norm_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
+                                                     label = "Code not found in ontology", 
+                                                     value = FALSE#no_norm
+                                     )
+                                     
                                  ),
-                                 awesomeCheckbox(inputId = ns(paste0("code_num_",id_code,"_no_norm_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
-                                                 label = "Code not found in ontology", 
-                                                 value = FALSE#no_norm
+                                 tags$td(
+                                     searchInput(
+                                         inputId = ns(paste0("code_num_",id_code,"_","written_code_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])), 
+                                         label = "Enter your search :", 
+                                         value = "",
+                                         placeholder = "Paste your code and click check", 
+                                         btnSearch = icon("check"), 
+                                         btnReset = icon("remove"), 
+                                         width = "70%"
+                                     ),
+                                     prettyRadioButtons(inputId = ns(paste0("code_num_",id_code,"_","written_relation_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
+                                                        label= "",
+                                                        choices = c("EXACT", "NARROW","NO_IDEA"),
+                                                        selected =  "",
+                                                        icon = icon("check"),
+                                                        status = "success",
+                                                        animation = "jelly")
                                  )
                                  
-                             ),
-                             tags$td(
-                                 searchInput(
-                                     inputId = ns(paste0("code_num_",id_code,"_","written_code_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])), 
-                                     label = "Enter your search :", 
-                                     value = "",
-                                     placeholder = "Paste your code and click check", 
-                                     btnSearch = icon("check"), 
-                                     btnReset = icon("remove"), 
-                                     width = "70%"
-                                 ),
-                                 prettyRadioButtons(inputId = ns(paste0("code_num_",id_code,"_","written_relation_", datos_reactive$data$document_id[sel_row],"_",datos_reactive$data$span_ini[sel_row],"_",datos_reactive$data$span_end[sel_row])),
-                                                    label= "",
-                                                    choices = c("EXACT", "NARROW","NO_IDEA"),
-                                                    selected =  "",
-                                                    icon = icon("check"),
-                                                    status = "success",
-                                                    animation = "jelly")
-                             )
-                             
-                         )),
-            ),
-        )
-    }else{
+                             )),
+                ),
+            )
+    }
+    else
+    {
         # UPDATE VALUES DEPENDING VALUE OF CODES AND SEMANTIC_RELATION
         code2load <- current_annotation[1]
         semrel2load <- current_annotation[2]
-        print("code2load")
-        print(code2load)
-        print("semrel2load")
-        print(semrel2load)
-        print("COMPROBACIONES_EXTRA")
+        # Logs for tracing errors
+        # print("code2load")
+        # print(code2load)
+        # print("semrel2load")
+        # print(semrel2load)
+        # print("COMPROBACIONES_EXTRA")
         # if(is.na(code2load) || code2load != dicc_filt_OUT$code[2]){
         #    print("ESNA Y SERIA FALSE")
         # }  else {
         #    print("NO ES NA Y SERIA FALSE")
         # }
-        
         box(width = 12,
             class = "12_especial", 
             tags$div(style = "overflow-y: scroll;  max-height:300px",
@@ -221,8 +225,8 @@ listcodes <- function(ns,id_code, datos_reactive, reactive_values, dicc_filt,sel
     }
 }
 
+# Generate the right pannel to normalize a mention
 generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_row,current_annotation,update){
-    # ns <- session$ns
     tags$div(
         fluidRow(
             column(6,tags$p(HTML(paste0("Mention: <b>",datos_reactive$data$span[sel_row],"</b>")))),
@@ -321,11 +325,10 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
                                       HTML(paste0("<b>Code ",i, ":</b>")),
                                       listcodes(ns,i, datos_reactive, reactive_values, dicc_filt, sel_row,current_annotation, update)
                                   )
-                                  # callModule(listcodes, "list_codes",datos_reactivos,num_codes(),dicc_filt,list_codes,
-                                  #             row_sel, code, sem_rel,no_code,no_norm)
                               })
                           }else{
                               lapply(1:num, function(i) {
+                                  # Logs for tracing errors
                                   #print("FALLO_ACTUAL")
                                   #print(current_annotation)
                                   i_code <- current_annotation$codes[[1]][i]
@@ -334,8 +337,6 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
                                       HTML(paste0("<b>Code ",i, ":</b>")),
                                       listcodes(ns,i, datos_reactive, reactive_values, dicc_filt, sel_row,list(i_code,i_sem_rel), update)
                                   )
-                                  # callModule(listcodes, "list_codes",datos_reactivos,num_codes(),dicc_filt,list_codes,
-                                  #             row_sel, code, sem_rel,no_code,no_norm)
                               })
                           }
                  )

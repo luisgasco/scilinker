@@ -1,5 +1,6 @@
 
-
+# createUser module  ----
+# Module to manage the creation of new users
 createUserUI <- function(id)
 {
     ns <- NS(id)
@@ -28,11 +29,12 @@ createUserUI <- function(id)
         actionButton(ns("add_user"), "Add new user")
     )
 }
-
-createUser <- function(input, output, session,con){
+createUser <- function(input, output, session,con)
+{
     ns <- session$ns
+    # Observe Event to listen when the add_user button is created
     observeEvent(input$add_user, {
-        # Generate fields to save user
+        # Generate the json structure to include in the MongoDB
         query <- toJSON(list(
             user_name = input[["new_user_name"]],
             password = input[["new_password"]],
@@ -40,17 +42,18 @@ createUser <- function(input, output, session,con){
             role = input[["new_role"]],
             projects = list()
         ), auto_unbox  = TRUE)
-        # Creamos entrada en la user collection
+        # Insert new user data to user collection
         con$insert(query)
-        # print("GUARDA USER???")
         showNotification("User successfully created", type = "default")
+        # Close modal
         removeModal()
         shinyjs::reset("add_user")
         
     },ignoreInit=TRUE, ignoreNULL = TRUE, once = TRUE )
 }
 
-
+# userConfig module  ----
+# Module to show the UI page of Users tab
 userConfigUI <- function(id)
 {
     ns <- NS(id)
@@ -72,29 +75,11 @@ userConfigUI <- function(id)
     )
     )
 }
-
-
-
 userConfig<- function(input, output, session, con)
 {
     ns <- session$ns
     
-    output$project_stats <- renderUI({
-        column(12,
-               fluidRow(
-                   h4("General"),
-                   # valueBoxOutput(ns("documents")),
-                   # valueBoxOutput(ns("current_annotations")),
-                   # downloadButton(ns("download_annotations"), "Download annotations tsv")
-               ),
-               hr(),
-               fluidRow(
-                   h4("User stats"),
-                   uiOutput(ns("user_stats"))
-               )
-        )
-    })
-
+    # Reactive values representing users of the platform
     users_of_project <- reactive({
         users <- con$find()
         # Verifica que los elementos de la columna "projects" sean dataframes
@@ -107,6 +92,7 @@ userConfig<- function(input, output, session, con)
         users
     })
     
+    # Show users in data table
     output$table_users = DT::renderDataTable({  
         # print(users_of_project())
         DT::datatable(users_of_project(),

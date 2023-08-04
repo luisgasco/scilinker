@@ -1,5 +1,6 @@
 # LOGIN_LOGOUT_MODuLES
-# Módulo para el formulario de inicio de sesión
+# loginModule module  ----
+# Module to display the Login form to the application when the login button is pressed.
 loginModuleUI <- function(id) {
     ns <- NS(id)
     tagList(
@@ -11,33 +12,22 @@ loginModuleUI <- function(id) {
         )
     )
 }
-
-logoutModuleUI <- function(id) {
-    ns <- NS(id)
-    tagList(
-        box(
-            title = "You are going to log out",
-            actionButton(ns("login"), "Logout")
-        )
-    )
-}
-
 loginModule <- function(input, output, session, con, userState) {
     ns <- session$ns
-    
+    # Observe event to access app 
     observeEvent(input$login, {
-        # MIRO EL ESTADO DE userSTATE# SI ES FALSE ENTRO A AUTENTICAR. SI NO CAMBIO.
+        # If user data is correct
         if (authenticate_user(input$username, input$password, con)) {
-            # Si el usuario y la contraseña son correctos, cerrar el modal y mostrar un mensaje de bienvenida
+            # Close modal and show a welcome modal
             removeModal()  # Cerrar el modal
             showModal(
                 modalDialog(
-                    title = "Bienvenido",
-                    paste0("Bienvenido, ", input$username),  # Mostrar el nombre de usuario
+                    title = "Welcome to Scilinker",
+                    paste0("Welcome, ", input$username), 
                     easyClose = TRUE
                 )
             )
-            
+            # Update userState reactive values and session data
             query_mongo_user <- con$find(query = paste('{"user_name": "', input$username, '"}', sep = ''))
             userState$user <- input$username  # Guardar el nombre de usuario en el estado del usuario
             userState$loggedIn <- TRUE
@@ -52,20 +42,31 @@ loginModule <- function(input, output, session, con, userState) {
             session$userData$projects <- userState$projects
             
         } else {
-            # Si el usuario y la contraseña son incorrectos, mostrar un mensaje de error
+            # If user data is incorrect, show a notification
             showNotification(
-                "Usuario o contraseña incorrectos. Por favor, inténtalo de nuevo.",
+                "Incorrect username or password. Please try again.",
                 type = "warning"
             )
             
         }
         
-    }, ignoreInit = TRUE)  # Ignorar la activación del evento durante la inicialización del módulo
+    }, ignoreInit = TRUE)  # Ignore event activation during module initialization
 }
 
+# logoutModule module  ----
+# Module to manage the logout process.
+logoutModuleUI <- function(id) {
+    ns <- NS(id)
+    tagList(
+        box(
+            title = "You are going to log out",
+            actionButton(ns("login"), "Logout")
+        )
+    )
+}
 logoutModule <- function(input, output, session, con, userState) {
     ns <- session$ns
-    
+    # If logout (login) button is clicked. Erase the userState data.
     observeEvent(input$login, {
         showModal(
             modalDialog(
@@ -87,5 +88,5 @@ logoutModule <- function(input, output, session, con, userState) {
         session$userData$role <- userState$role
         session$userData$projects <- userState$projects
         
-    }, ignoreInit = TRUE)  # Ignorar la activación del evento durante la inicialización del módulo
+    }, ignoreInit = TRUE)  # Ignore event activation during module initialization
 }

@@ -1,11 +1,10 @@
 
-
+# generalValidationInterface module  ----
+# Module to show stats and validate mentions of users of an specific project
 generalValidationInterfaceUI <- function(id)
 {
     ns <- NS(id)
-    
-    # users_of_project <- con$find(sprintf('{"projects.project": "%s"}', "proyecto1_test"))
-    
+    # Show the UI (a tab-box with tabs)
     fluidRow(
         column(12,
                tabBox( 
@@ -32,11 +31,12 @@ generalValidationInterfaceUI <- function(id)
     )
 
 }
-
 generalValidationInterface<- function(input, output, session, con)
 {
     ns <- session$ns
-    
+    # Render the tab "project_stats" where admin can visualize number of documents
+    # in the project, number of annotations done by annotator users, download 
+    # those annotations in tsv format, and show stats per each user.
     output$project_stats <- renderUI({
         column(12,
             fluidRow(
@@ -53,7 +53,7 @@ generalValidationInterface<- function(input, output, session, con)
         )
     })
     
-    # Render values
+    # Render value Box of number of documents associated to the current project
     output$documents <- renderValueBox({
         print(session$userData$current_project)
         query <- toJSON(list(
@@ -65,6 +65,7 @@ generalValidationInterface<- function(input, output, session, con)
             color = "purple"
         )
     })
+    # Render value Box of number of annotations associated to the current project
     output$current_annotations <- renderValueBox({
         # Query current project in mentions
         query <- toJSON(list(
@@ -76,12 +77,14 @@ generalValidationInterface<- function(input, output, session, con)
             color = "olive"
         )
     })
+    # Render a UI with stats per user
     output$user_stats <- renderUI({
         users_of_project <- con$find(sprintf('{"projects.project": "%s"}', session$userData$current_project))$user_name
         users_of_project <- users_of_project[users_of_project!="admin"]
-        # Calculate number of 
-        print("USERS_INSIDE RENDER_STATS")
-        print(users_of_project)
+        # Logs for tracing errors
+        # print("USERS_INSIDE RENDER_STATS")
+        # print(users_of_project
+        # Generate stats UI per user of the project (one row per user)
         lapply(seq_along(users_of_project), function(i) {
             #Calculate percentajes
             query_mentions <- sprintf('{"project_id": "%s", "validated_by.user_id": "%s"}', session$userData$current_project, users_of_project[i])
@@ -105,6 +108,7 @@ generalValidationInterface<- function(input, output, session, con)
             )
         })
     })
+    # Reactive data to prepare the tsv content with annotations
     tsv_content <- reactive({
         # Select data from mongodb
         query <- toJSON(list(
@@ -127,7 +131,7 @@ generalValidationInterface<- function(input, output, session, con)
         mentions_df
     })
     
-    # Main data downloader
+    # Download handler when pressing Download 
     output$download_annotations <- downloadHandler(
         # Prepare data to be downloaded as a tsv
         filename =  function() {
