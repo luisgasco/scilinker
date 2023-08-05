@@ -35,7 +35,7 @@ input_validation <- function(input, dicc_filt, reactive_values, datos_reactive, 
         }
         ## CHECK 2a
         # Check that all code blocks have a code selected
-        if ((contador_codigos()==0 && input[[nonorm_id]]==FALSE && input[[nocode_id]]==FALSE && (input[[writtencode_id]]=="" || is.null(input[[writtenrel_id]])) && (input[["previously_annotated"]]!=TRUE) )){
+        if ((contador_codigos()==0 && input[[nonorm_id]]==FALSE && input[[nocode_id]]==FALSE && (input[[writtencode_id]]=="" || is.null(input[[writtenrel_id]])) && (input[["previously_annotated"]]!=TRUE) && (input[["wrong_mention"]]!=TRUE) )){
             texto <- paste0("In code block number ",id_code, " you have forgotten to select a code. <br> Please complete this information.")
             showModal(modalDialog(
                 title = HTML(paste0(icon_error, 'Error 6 - No code selected in Code ', id_code)),

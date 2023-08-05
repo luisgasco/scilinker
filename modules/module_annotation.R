@@ -66,12 +66,13 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     is_abb <- reactiveVal(FALSE)
     is_composite <- reactiveVal(FALSE)
     need_context <- reactiveVal(FALSE)
+    is_wrong <- reactiveVal(FALSE)
     # Put reactive values in a list to easily access them 
     reactive_values <- list(context_id = context_id, composite_id = composite_id,
                             abbrev_id = abbrev_id, num_codes = num_codes,
                             show_text = show_text,prev_annotated = prev_annotated,
                             is_abb = is_abb, is_composite = is_composite,
-                            need_context = need_context)
+                            need_context = need_context, is_wrong = is_wrong)
     
     # Loading modal while data is being prepared
     observeEvent(session$userData$current_project, {
@@ -101,10 +102,10 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
         is_abb(FALSE)
         is_composite(FALSE)
         need_context(FALSE)  
+        is_wrong(FALSE)
         # After loading data, remove modal
         removeModal()
     }, ignoreNULL = FALSE)
-    
     
     # Create proxy object to update datatable
     proxy <- dataTableProxy(ns("mytable"))
@@ -141,7 +142,7 @@ tableAnnotator <- function(input, output, session,datos_reactive,sel_row)
     # Observe the row that is clicked using the UI
     observe({
         sel_row(input$mytable_rows_selected)
-    })
+    },priority=5)
    
     # Show table on the interface applying some filters and ordering
     output$mytable = DT::renderDataTable({  
@@ -159,7 +160,7 @@ tableAnnotator <- function(input, output, session,datos_reactive,sel_row)
                       extensions = c("Scroller")) %>% 
         DT::formatStyle( 'validated',
                          target = 'row',
-                         backgroundColor = DT::styleEqual(c(0, 1,2), c('#f4f4f4', '#cbffe0','#fffddc')),
+                         backgroundColor = DT::styleEqual(c(0, 1,2,3), c('#f4f4f4', '#cbffe0','#fffddc','#dd6f64')),
                          fontWeight = 'bold')
     },server = TRUE
     )
@@ -213,8 +214,9 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         reactive_values$show_text(FALSE)
         reactive_values$prev_annotated(FALSE)
         reactive_values$num_codes(1)
+        reactive_values$is_wrong(FALSE)
     })
-    
+    # 
     # Observe event to enable/disable the "full_text" button
     observeEvent(input[[reactive_values$context_id()]],{
         if (input[[reactive_values$context_id()]]==TRUE){
@@ -248,6 +250,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         updateAwesomeCheckbox(session, reactive_values$composite_id(),TRUE)
         reactive_values$is_composite(TRUE)
         reactive_values$prev_annotated(input[["previously_annotated"]])
+        reactive_values$is_wrong(input[["wrong_mention"]])
         reactive_values$need_context(input[["need_context"]])
         # We update the data frame so that there are no problems when saving data.
         update_logical_values_df(input,session, annotation_reactive,proxy,sel_row(),datos_reactive,reactive_values)
@@ -264,17 +267,25 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
     # Observe event to enable/disable the code candidate list if previously 
     # annotated is not clicked
     observeEvent(input[["previously_annotated"]],{
-        if (input[["previously_annotated"]] ){
+        if(input[["wrong_mention"]] || input[["previously_annotated"]]){
             # If True disable the candidate code list
             shinyjs::disable("candidate_list_elem")
-            # Logs for tracing errors
-            # print("Observe - previously_annotated - TRUE")
         }
         else{
-            # If false enable the candidate code list
             shinyjs::enable("candidate_list_elem")
-            # Logs for tracing errors
-            # print("Observe - previously_annotated - FALSE")
+        }
+        
+    })
+    
+    # Observe event to enable/disable the code candidate list if wrong_mention
+    # is clicker
+    observeEvent(input[["wrong_mention"]],{
+        if(input[["wrong_mention"]] || input[["previously_annotated"]]){
+            #Don't change state, because it was previously disable
+            shinyjs::disable("candidate_list_elem")
+        }
+        else{
+            shinyjs::enable("candidate_list_elem")
         }
     })
     
@@ -322,6 +333,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                 # when generating the normalization panel
                 if (nrow(anotacion_existente) == 1) {
                     reactive_values$prev_annotated(anotacion_existente$previously_annotated)
+                    reactive_values$is_wrong(anotacion_existente$is_wrong)
                     reactive_values$is_abb(anotacion_existente$is_abrev)
                     reactive_values$is_composite(anotacion_existente$is_composite)
                     reactive_values$need_context(anotacion_existente$need_context)
@@ -336,6 +348,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                     # browser()
                     # Generate panel with update=TRUE 
                     generate_panel(ns, datos_reactive, reactive_values, dicc_filt, sel_row(), anotacion_existente %>% select(codes, sem_rels), update = TRUE)
+                    
                 } else {
                     # If there is not existing annotation, we will call to 
                     # generate panel with update=FALSE
@@ -445,9 +458,9 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                    span_ini == datos_reactive$data$span_ini[sel_row()],
                    span_end == datos_reactive$data$span_end[sel_row()]) %>%
             mutate(user_id = session$userData$user,
-                   validated = ifelse(input[["previously_annotated"]], 2, 1),
+                   validated = ifelse(input[["wrong_mention"]], 3,
+                                      ifelse(input[["previously_annotated"]], 2, 1)),
                    previously_annotated = ifelse(input[["previously_annotated"]], TRUE, FALSE))
-        
         # Get the new sate (1 or 2) of the normalized mention
         new_state <- datos_reactive$data %>%  filter(user_id == session$userData$user,
                                                      document_id == datos_reactive$data$document_id[sel_row()],
@@ -506,6 +519,10 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                                                        document_id == datos_reactive$data$document_id[sel_row()] &
                                                        span_ini == datos_reactive$data$span_ini[sel_row()] &
                                                        span_end == datos_reactive$data$span_end[sel_row()], input[["previously_annotated"]], previously_annotated),
+                    is_wrong =  ifelse(user_id==session$userData$user &
+                                           document_id == datos_reactive$data$document_id[sel_row()] &
+                                           span_ini == datos_reactive$data$span_ini[sel_row()] &
+                                           span_end == datos_reactive$data$span_end[sel_row()], input[["wrong_mention"]], is_wrong),
                     codes =  ifelse(user_id==session$userData$user &
                                         document_id == datos_reactive$data$document_id[sel_row()] &
                                         span_ini == datos_reactive$data$span_ini[sel_row()] &
@@ -537,6 +554,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                 is_composite = input[[reactive_values$composite_id()]],
                 need_context = input[[reactive_values$context_id()]],
                 previously_annotated = input[["previously_annotated"]],
+                is_wrong = input[["wrong_mention"]],
                 codes = ifelse(!is.null(code_list), list(code_list), list("prev_annotated")) ,
                 sem_rels = ifelse(!is.null(semrel_list), list(semrel_list), list("prev_annotated")),
                 text = datos_reactive$data$span[sel_row()]
@@ -556,17 +574,18 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         current_annotation <- annotation_reactive$data%>% filter(annotation_id == current_annotation_id,
                                                                  project_id == session$userData$current_project,
                                                                  user_id == session$userData$user)
-        
-        # Save the annotation in annotation collection
+
+        # # Save the annotation in annotation collection
         save_annotation_in_db(session$userData$annotation_db_endpoint,current_annotation, datos_reactive$data$span[sel_row()],UPDATE_ALL)
-        # print("ANOTACION GUARDADA")
-        
-        # Update the status in mentions collection (changing the field associated to the user_id inside validated_by)
+        # # print("ANOTACION GUARDADA")
+        # 
+        # # Update the status in mentions collection (changing the field associated to the user_id inside validated_by)
         update_mention_in_db(session$userData$mentions_db_endpoint,datos_reactive$data[sel_row(),],session$userData$user, UPDATE_ALL)
         # print("MENCION ACTUALIZADA")
         
-        # Update reactive value of prev_annotated
+        # Update reactive value of prev_annotated and wrong_mention (that inhabilitate part of the inputs)
         reactive_values$prev_annotated(input[["previously_annotated"]])
+        reactive_values$is_wrong(input[["wrong_mention"]])
     })
 }
 

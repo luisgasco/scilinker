@@ -231,11 +231,19 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
         fluidRow(
             column(6,tags$p(HTML(paste0("Mention: <b>",datos_reactive$data$span[sel_row],"</b>")))),
             column(6,
-                   shinyWidgets::materialSwitch(
-                       inputId = ns("previously_annotated"),
-                       label = "Previously annotated", 
-                       value = if(is.null(reactive_values$prev_annotated())) FALSE else reactive_values$prev_annotated(),
-                       status = "warning"
+                   fluidRow(
+                       shinyWidgets::materialSwitch(
+                           inputId = ns("previously_annotated"),
+                           label = "Previously annotated", 
+                           value = if(is.null(reactive_values$prev_annotated())) FALSE else reactive_values$prev_annotated(),
+                           status = "warning"
+                       ),
+                       shinyWidgets::materialSwitch(
+                           inputId = ns("wrong_mention"),
+                           label = "Wrong mention", 
+                           value = if(is.null(reactive_values$is_wrong())) FALSE else reactive_values$is_wrong(),
+                           status = "warning"
+                       )
                    )
             )
         ),

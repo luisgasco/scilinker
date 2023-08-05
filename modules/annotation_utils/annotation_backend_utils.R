@@ -72,6 +72,10 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
                                                    document_id == datos_reactive$data$document_id[row_sel] &
                                                    span_ini == datos_reactive$data$span_ini[row_sel] &
                                                    span_end == datos_reactive$data$span_end[row_sel], input[["previously_annotated"]], previously_annotated),
+                is_wrong =  ifelse(user_id==session$userData$user &
+                                       document_id == datos_reactive$data$document_id[row_sel] &
+                                       span_ini == datos_reactive$data$span_ini[row_sel] &
+                                       span_end == datos_reactive$data$span_end[row_sel], input[["wrong_mention"]], is_wrong),
                 codes =  ifelse(user_id==session$userData$user &
                                     document_id == datos_reactive$data$document_id[row_sel] &
                                     span_ini == datos_reactive$data$span_ini[row_sel] &
@@ -98,6 +102,7 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
             is_composite = input[[reactive_values$composite_id()]],
             need_context = input[[reactive_values$context_id()]],
             previously_annotated = input[["previously_annotated"]],
+            is_wrong = input[["wrong_mention"]],
             codes = list(code_list),
             sem_rels = list(semrel_list),
             text = datos_reactive$data$span[row_sel]
@@ -184,6 +189,7 @@ save_annotation_in_db <- function(db_con, anotation, texto, update_all){
                                   is_composite = anotation$is_composite[1],
                                   need_context = anotation$need_context[1],
                                   previously_annotated = anotation$previously_annotated[1],
+                                  is_wrong = anotation$is_wrong[1],
                                   codes = c(anotation[1,]$codes), 
                                   sem_rels = c(anotation[1,]$sem_rels) 
                               )
