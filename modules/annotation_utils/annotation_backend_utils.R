@@ -84,6 +84,15 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
                                        document_id == datos_reactive$data$document_id[row_sel] &
                                        span_ini == datos_reactive$data$span_ini[row_sel] &
                                        span_end == datos_reactive$data$span_end[row_sel], list(semrel_list), sem_rels),
+                total_time = ifelse(user_id==session$userData$user &
+                                        document_id == datos_reactive$data$document_id[row_sel] &
+                                        span_ini == datos_reactive$data$span_ini[row_sel] &
+                                        span_end == datos_reactive$data$span_end[row_sel], total_time, total_time),
+                list_times = ifelse(user_id==session$userData$user &
+                                        document_id == datos_reactive$data$document_id[row_sel] &
+                                        span_ini == datos_reactive$data$span_ini[row_sel] &
+                                        span_end == datos_reactive$data$span_end[row_sel], lapply(list_times, function(existing_list) c(existing_list, 0)), list_times)
+                
                 
             )
     }else{
@@ -105,10 +114,13 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
             is_wrong = input[["wrong_mention"]],
             codes = list(code_list),
             sem_rels = list(semrel_list),
-            text = datos_reactive$data$span[row_sel]
+            text = datos_reactive$data$span[row_sel],
+            total_time = 0,
+            list_times = list(0)
         )
         names(new_row$codes) <- "codes"
         names(new_row$sem_rels) <- "sem_rels"
+        names(new_row$list_times) <- "list_times"
         # Incorpore new row in the dataframe
         annotation_reactive$data <- rbind(annotation_reactive$data, new_row)
     }
@@ -176,6 +188,7 @@ save_annotation_in_db <- function(db_con, anotation, texto, update_all){
         
         # Verify if annotation exists in connection
         existing_entry <- db_con$find(query)
+        # anotation_test <<- anotation
         if (length(existing_entry) > 0) {
             # If there is an existing entry, update it. 
             db_con$update(query, 
@@ -191,7 +204,9 @@ save_annotation_in_db <- function(db_con, anotation, texto, update_all){
                                   previously_annotated = anotation$previously_annotated[1],
                                   is_wrong = anotation$is_wrong[1],
                                   codes = c(anotation[1,]$codes), 
-                                  sem_rels = c(anotation[1,]$sem_rels) 
+                                  sem_rels = c(anotation[1,]$sem_rels),
+                                  total_time = c(anotation[1,]$total_time), # SUM new value to previous one
+                                  list_times = c(anotation[1,]$list_times)
                               )
                           ), auto_unbox  = TRUE))
             # Logs for tracing errors
@@ -200,6 +215,7 @@ save_annotation_in_db <- function(db_con, anotation, texto, update_all){
             # If there is not an existing entry, create a new one
             anotation[1,]$codes = c(anotation[1,]$codes)
             anotation[1,]$sem_rels = c(anotation[1,]$sem_rels)
+            anotation[1,]$list_times = c(anotation[1,]$list_times)
             db_con$insert(anotation[1,])
             # Logs for tracing errors
             # cat("Nueva entrada incorporada.")

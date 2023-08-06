@@ -67,12 +67,14 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     is_composite <- reactiveVal(FALSE)
     need_context <- reactiveVal(FALSE)
     is_wrong <- reactiveVal(FALSE)
+    timer <- reactiveVal()
     # Put reactive values in a list to easily access them 
     reactive_values <- list(context_id = context_id, composite_id = composite_id,
                             abbrev_id = abbrev_id, num_codes = num_codes,
                             show_text = show_text,prev_annotated = prev_annotated,
                             is_abb = is_abb, is_composite = is_composite,
-                            need_context = need_context, is_wrong = is_wrong)
+                            need_context = need_context, is_wrong = is_wrong,
+                            timer = timer)
     
     # Loading modal while data is being prepared
     observeEvent(session$userData$current_project, {
@@ -305,7 +307,10 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
             # asd <<- datos_reactive$data
             # asd2 <<- annotation_reactive$data
             # asd22<<- dicc_filt
-            
+            # Get current system time to calculate time spent when saving
+            reactive_values$timer(Sys.time())
+            # print("Tiempo obtenido en renderUI")
+            # print(reactive_values$timer())
             # Función para generar la interfaz reactiva para cada uno de las menciones.
             # Cada mención tendrá su propia lista de codigos, etc.
             # Los datos_reactivos serán data_reactive$data
@@ -317,7 +322,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                                             datos_reactive$data[sel_row(),]$span_ini, "_",
                                             datos_reactive$data[sel_row(),]$span_end)
             # Logs for tracing errors
-            # print("CURRENT ANNOTATION")
+            # print("Current annotation al cargar")
             # print(annotation_id_current)
             # print(annotation_reactive$data)
             
@@ -327,8 +332,8 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                 # Get the existing annotation if possible
                 anotacion_existente <- annotation_reactive$data %>% 
                                         filter(user_id == session$userData$user,
-                                               annotation_id == annotation_id_current)
-                
+                                               annotation_id == annotation_id_current) %>% unique()
+
                 # If there is an annotation, update reactive values to be used
                 # when generating the normalization panel
                 if (nrow(anotacion_existente) == 1) {
@@ -450,6 +455,8 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         # print(paste0("Lista de códigos seleccionada: ", code_list))
         # print(paste0("Lista de rels seleccionada: ", semrel_list))
         
+        
+        
         # Update mentions Dataframe (datos_reactive)
         # This code will change the "user_id","validated" and "previously_annotated"
         # values. This will also update the "validated_by" value for the current user
@@ -483,7 +490,18 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         current_annotation_id <- paste0(datos_reactive$data[sel_row(),]$document_id,"_",datos_reactive$data[sel_row(),]$span_ini,"_",datos_reactive$data[sel_row(),]$span_end)
         # Check if this annotation existed before in the dataframe
         is_present <- current_annotation_id %in% annotation_reactive$data$annotation_id[annotation_reactive$data$user_id == session$userData$user]
+        # Calculate duration of annotation in seconds
+        duration <- as.numeric(difftime(Sys.time(), reactive_values$timer(), units = "secs"))
+        
         # Logs for tracing errors
+        # print("Estamos guardando la current annotation:")
+        # print(current_annotation_id)
+        # print("Tiempo obtenido al cargar UI")
+        # print(reactive_values$timer())
+        # print("Tiempo en este momento")
+        # print(Sys.time())
+        # print("Tiempo duration en el save")
+        # print(duration)
         # print(paste0("ESTE ELEMENTO ESTá PRESENTE? ", is_present))
         # If anotation is present in the dataframe, we update the data
         if(is_present){
@@ -531,6 +549,14 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                                            document_id == datos_reactive$data$document_id[sel_row()] &
                                            span_ini == datos_reactive$data$span_ini[sel_row()] &
                                            span_end == datos_reactive$data$span_end[sel_row()], list(semrel_list), sem_rels),
+                    total_time = ifelse(user_id==session$userData$user &
+                                      document_id == datos_reactive$data$document_id[sel_row()] &
+                                      span_ini == datos_reactive$data$span_ini[sel_row()] &
+                                      span_end == datos_reactive$data$span_end[sel_row()], total_time+duration, total_time),
+                    list_times = ifelse(user_id==session$userData$user &
+                                            document_id == datos_reactive$data$document_id[sel_row()] &
+                                            span_ini == datos_reactive$data$span_ini[sel_row()] &
+                                            span_end == datos_reactive$data$span_end[sel_row()], lapply(list_times, function(existing_list) c(existing_list, duration)), list_times)
                 )
 
             
@@ -557,10 +583,13 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                 is_wrong = input[["wrong_mention"]],
                 codes = ifelse(!is.null(code_list), list(code_list), list("prev_annotated")) ,
                 sem_rels = ifelse(!is.null(semrel_list), list(semrel_list), list("prev_annotated")),
-                text = datos_reactive$data$span[sel_row()]
+                text = datos_reactive$data$span[sel_row()],
+                total_time = duration,
+                list_times = list(duration)
             )
             names(new_row$codes) <- "codes"
             names(new_row$sem_rels) <- "sem_rels"
+            names(new_row$list_times) <- "list_times"
             # Include the row into annotation_reactive dataframe
             annotation_reactive$data <- rbind(annotation_reactive$data, new_row)
         }
@@ -574,7 +603,6 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         current_annotation <- annotation_reactive$data%>% filter(annotation_id == current_annotation_id,
                                                                  project_id == session$userData$current_project,
                                                                  user_id == session$userData$user)
-
         # # Save the annotation in annotation collection
         save_annotation_in_db(session$userData$annotation_db_endpoint,current_annotation, datos_reactive$data$span[sel_row()],UPDATE_ALL)
         # # print("ANOTACION GUARDADA")
@@ -582,7 +610,8 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         # # Update the status in mentions collection (changing the field associated to the user_id inside validated_by)
         update_mention_in_db(session$userData$mentions_db_endpoint,datos_reactive$data[sel_row(),],session$userData$user, UPDATE_ALL)
         # print("MENCION ACTUALIZADA")
-        
+        sel_row(NULL)
+        reactive_values$timer(NULL)
         # Update reactive value of prev_annotated and wrong_mention (that inhabilitate part of the inputs)
         reactive_values$prev_annotated(input[["previously_annotated"]])
         reactive_values$is_wrong(input[["wrong_mention"]])
