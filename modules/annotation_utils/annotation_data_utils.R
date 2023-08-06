@@ -49,7 +49,9 @@ loadAnnotations <- function(session, user_ide, project_id){
             previously_annotated = logical(),
             codes = I(rep(list("232674004"), 0)),  # Lista vacía con 0 elementos
             sem_rels = I(rep(list("EXACT"), 0)),    # Lista vacía con 0 elementos
-            text = character()
+            text = character(),
+            total_time = numeric(),
+            list_times = I(rep(list("EXACT"), 0))
         )
     }
     output
