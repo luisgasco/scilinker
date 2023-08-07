@@ -80,7 +80,7 @@ loadDict  <- function(abspath2dicc) {
     
     # Apply function para obtener URL de diccionario.
     parte_web1="https://browser.ihtsdotools.org/?perspective=full&conceptId1="
-    parte_web2="&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es"
+    parte_web2="&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false"
     diccionario<-  diccionario %>% 
         rowwise()  %>%
         mutate(url = paste0(parte_web1,code,parte_web2))
