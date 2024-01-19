@@ -15,6 +15,11 @@ generalValidationInterfaceUI <- function(id)
                             div(
                                 uiOutput(ns("project_stats")),
                                 
+                            ),
+                            fluidRow(
+                                column(12,
+                                       actionButton(ns("delete_project"), "Delete project", class = "btn-danger", style = "float: right; color:white")
+                                )
                             )
                    ),
                    tabPanel("Validation interface", 
@@ -31,13 +36,15 @@ generalValidationInterfaceUI <- function(id)
     )
 
 }
-generalValidationInterface<- function(input, output, session, con)
+generalValidationInterface<- function(input, output, session, con, con_projects)
 {
     ns <- session$ns
+    
     # Render the tab "project_stats" where admin can visualize number of documents
     # in the project, number of annotations done by annotator users, download 
     # those annotations in tsv format, and show stats per each user.
     output$project_stats <- renderUI({
+        gazetteer_id_name <- con_projects$find(toJSON(list(name = session$userData$current_project), auto_unbox  = TRUE))$gazetteer_id
         column(12,
             fluidRow(
                 h4("General"),
@@ -45,6 +52,12 @@ generalValidationInterface<- function(input, output, session, con)
                 valueBoxOutput(ns("current_annotations")),
                 downloadButton(ns("download_annotations"), "Download annotations tsv")
                     ),
+            hr(),
+            fluidRow(
+                class = "align-items-center",
+                column(5,HTML("<b>Gazetteer used in the project:</b>")),
+                column(7,HTML(gazetteer_id_name))
+            ),
             hr(),
             fluidRow(
                 div(
@@ -150,6 +163,77 @@ generalValidationInterface<- function(input, output, session, con)
         }
         mentions_df
     })
+    
+    # Delete project:
+    # If delete button is clicked show modal to confirm
+    observeEvent(input$delete_project, {
+        showModal(
+            modalDialog(
+                id = "confirmation_modal",
+                title = "Confirm",
+                tagList(
+                    "This is a destructive action, but annotations will not be deleted.",
+                    "If you want to continue, type the name of the project in the text field and press 'Delete' ",
+                    textInput(ns("confirm_project_name"),label = "",value = ""),
+                    uiOutput(ns("status_confirm_project_name")),
+                    awesomeCheckbox(inputId = ns("delete_annotations"), label = "Delete user annotations",
+                                    value = FALSE,status = "danger")
+                ),
+                footer = tagList(
+                    modalButton("Cancel"),
+                    actionButton(ns("confirm_delete_project"), "Delete", class = "btn-danger",style = "color:white")
+                )
+                
+            )
+        )
+    },ignoreInit=TRUE, ignoreNULL = TRUE)
+    
+    # IF confirm_delete is clicked, verify the input text field and delete gazzeteer from db.
+    observeEvent(input$confirm_delete_project, {
+        # Borrar la entrada de la base de datos mongo con_terminologies cuyo "name" sea "hola"
+        # con$remove('{"name": "hola"}')
+        if (input$confirm_project_name == session$userData$current_project){
+            
+            delete_project(mongo_url = paste0("mongodb://",mongo_host,":",mongo_port),
+                           db_name = mongo_database,
+                           projects_collection = mongo_projects_collection,
+                           documents_collection = mongo_documents_collection,
+                           mentions_collection = mongo_mentions_collection,
+                           users_collection = mongo_user_collection,
+                           project_to_delete = session$userData$current_project,
+                           annotations_collection = mongo_annotations_collection, 
+                           delete_annotations = input$delete_annotations)
+
+            
+            # Search active users of the project (plus the admin, present in every project)
+            # db.getCollection('proyectos').find({"name":"asd"}) and get users
+            # Delete entry from project collection.
+            # db.getCollection('proyectos').remove({"name":"asd"})
+            
+            # Delete documents from documents collection.
+            # db.getCollection('documentos').remove({"project_id":"pruebaA"})
+            
+            # Delete mentions from mentions collection
+            # db.getCollection('menciones').remove({"project_id":"pruebaA"})
+            
+            # Update project field in users collection. 
+            # https://bard.google.com/chat/312f25ea284ba39d
+            print("everythin deleted")
+            
+            removeModal()
+            # Show info. modal
+            showModal(modalDialog(id = "project_deleted", 
+                                  HTML("Project successfully deleted\n Reload the page to update the menu.") , 
+                                  size="s")
+            )
+        } else {
+            output$status_confirm_project_name <- renderUI({
+                HTML(paste("<p style='color:red;'>",
+                           "The written text does not match the name of the project",
+                           "</p>"))
+            })
+        }
+    },ignoreInit=TRUE, ignoreNULL = TRUE)
     
     # Download handler when pressing Download 
     output$download_annotations <- downloadHandler(
