@@ -12,7 +12,7 @@ loginModuleUI <- function(id) {
         )
     )
 }
-loginModule <- function(input, output, session, con, userState) {
+loginModule <- function(input, output, session, con, con_terminologies,con_projects, userState) {
     ns <- session$ns
     # Observe event to access app 
     observeEvent(input$login, {
@@ -33,14 +33,19 @@ loginModule <- function(input, output, session, con, userState) {
             userState$loggedIn <- TRUE
             userState$data <- query_mongo_user
             userState$role <- query_mongo_user$role
+            # print(query_mongo_user$role)
+            # print(query_mongo_user$projects)
+            # asdasd<<- con_projects
+            # print(ifelse( query_mongo_user$role=="admin",con_projects$find()$name, query_mongo_user$projects[[1]]$project))
             userState$projects <- query_mongo_user$projects[[1]]$project
+            userState$terminologies  <- con_terminologies$find()$name
             # Save to session user_data
             session$userData$user <- input$username
             session$userData$loggedIn <- TRUE  
             session$userData$data <- userState$data
             session$userData$role <- userState$role
             session$userData$projects <- userState$projects
-            
+            session$userData$terminologies <-  userState$terminologies
         } else {
             # If user data is incorrect, show a notification
             showNotification(
@@ -81,12 +86,14 @@ logoutModule <- function(input, output, session, con, userState) {
         userState$data <- NULL
         userState$role <- NULL
         userState$projects <- NULL
+        userState$terminologies <- NULL
         # Save to session user_data
         session$userData$user <- input$username
         session$userData$loggedIn <- FALSE  
         session$userData$data <- userState$data
         session$userData$role <- userState$role
         session$userData$projects <- userState$projects
+        session$userData$terminologies <-  userState$terminologies
         
     }, ignoreInit = TRUE)  # Ignore event activation during module initialization
 }

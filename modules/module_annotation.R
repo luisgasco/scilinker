@@ -105,6 +105,11 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
         is_composite(FALSE)
         need_context(FALSE)  
         is_wrong(FALSE)
+        # Load the gazzeteer when loading all the data
+        current_gaz_id <- session$userData$projects_db_endpoint$find(toJSON(list(name = session$userData$current_project), auto_unbox  = TRUE))$gazetteer_id
+        current_gaz_info <- session$userData$terminologies_db_endpoint$find(toJSON(list(name = current_gaz_id), auto_unbox  = TRUE))
+        current_gaz_data <- session$userData$terms_db_endpoint$find(toJSON(list(gazetteer_id = current_gaz_id), auto_unbox  = TRUE))
+        diccionario <<- loadDict2(current_gaz_data, current_gaz_info$hyperlink_pattern)
         # After loading data, remove modal
         removeModal()
     }, ignoreNULL = FALSE)
@@ -113,7 +118,23 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     proxy <- dataTableProxy(ns("mytable"))
     
     # Load tsv file dictionary. Later it will be done by reading from a collection in the database.
-    diccionario <<- loadDict(abspath2dicc)
+    # print(paste0("obtener terminos con esto: ", session$userData$terms))
+    # print(paste0( "terminologías": session$userData$terminologies))
+    # print(paste0("current project", session$userData$current_project))
+    # Vamos a utilizar el endpoint para encontrar el gazzeteer id del current project
+    # print(session$userData$projects_db_endpoint)
+    # asdasd<<- session$userData$projects_db_endpoint
+    # current_gaz_id = session$userData$projects_db_endpoint$find(paste0('{"name":"',session$userData$current_project,'"}'))$gazetteer_id
+    # print(paste0("CURRENT gazzeter_name ", current_gaz_id))
+    # curent_gaz_data = session$userData$terminologies_db_endpoint$find(paste0('{"name":"',current_gaz_id,'"}'))
+    # print(paste0("CURRENT gzzeter_data ", curent_gaz_data))
+    # # Datos de ese gazzeteer: 
+    # datos_gaz_test<<- session$userData$terms_db_endpoint$find(paste0('{"gazetteer_id":"',current_gaz_id,'"}'))
+
+    # Load gazzeteer_id from project. 
+    
+    # Load gazeeteer data from terms and terminology
+    # diccionario2 <<- loadDict(abspath2dicc)
     
     # Show results for current user
     # print(session$userData$projects)

@@ -133,6 +133,8 @@ generalConfigInterface <- function(input, output, session, con)
             )
         )
     })
+
+    
     # Observe Event to generate the modal with fields to change the user password
     observeEvent(input$btn_update_password, {
         showModal(modalDialog(id = "updateModal", changePassUI(ns("changePass"))))

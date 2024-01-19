@@ -49,7 +49,7 @@ createUser <- function(input, output, session,con)
         removeModal()
         shinyjs::reset("add_user")
         
-    },ignoreInit=TRUE, ignoreNULL = TRUE, once = TRUE )
+    },ignoreInit=TRUE, ignoreNULL = TRUE, once=TRUE )
 }
 
 # userConfig module  ----
@@ -116,5 +116,5 @@ userConfig<- function(input, output, session, con)
         callModule(createUser, "createUser",con=con)
         
         shinyjs::reset("create_user")
-    },ignoreInit = TRUE, ignoreNULL = TRUE, once=TRUE )
+    },ignoreInit = TRUE, ignoreNULL = TRUE)
 }

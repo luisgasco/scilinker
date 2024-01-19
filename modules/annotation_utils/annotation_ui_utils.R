@@ -295,13 +295,9 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
                                                    )
                                                )),
                                         column(6,
-                                               actionButton(ns("update_codes"),"Update codes:",style="")
+                                               actionButton(ns("update_codes"),"Update codes:",style="",width = "100%")
                                         )
                                     )
-                                    
-                                    
-                                    
-                                    
                                 }else{
                                     div(
                                         column(6, 
@@ -314,10 +310,10 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
                                                    step = 1
                                                )),
                                         column(6,
-                                               actionButton(ns("update_codes"),"Update codes:", style="")
+                                               actionButton(ns("update_codes"),"Update codes:", style="",width = "100%")
                                         )
                                     )
-                                }, style="display: flex;align-items: center;"
+                                }, style="display: flex; align-items-center;"
                             )
                             
                      )

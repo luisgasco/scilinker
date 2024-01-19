@@ -73,6 +73,41 @@ filtra_dict <- function(datos,diccionario, row_sel) {
 
 # Function to load dictionary.
 # TODO: Read this data from a collection called "gazzeteer" instead of one file
+loadDict2  <- function(diccionario, hyperlink_pattern) {
+    # /srv/shiny-server/bioMnorm/data/diccionario.tsv
+    # diccionario <- read.csv(abspath2dicc,sep="\t",
+    #                         colClasses = c("code" = "character")) 
+    
+    # Apply function para obtener URL de diccionario.
+    partes <- strsplit(hyperlink_pattern, "{CODE}",fixed = TRUE)
+    parte_web1 <- partes[[1]][1]
+    parte_web2 <- partes[[1]][2]
+    # parte_web1="https://browser.ihtsdotools.org/?perspective=full&conceptId1="
+    # parte_web2="&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false"
+    # Al incluir el gazzeteer:
+    # https://browser.ihtsdotools.org/?perspective=full&conceptId1={CODE}&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false
+    
+    diccionario<-  diccionario %>% 
+        rowwise()  %>%
+        mutate(url = paste0(parte_web1,code,parte_web2))
+    main_terms<-  diccionario  %>%
+        group_by(code)  %>%
+        filter(mainterm == 1) %>%
+        mutate(term = first(term)) %>%
+        mutate(sinonimo = "")
+    sinonimos <- diccionario  %>%
+        group_by(code)  %>%
+        filter(mainterm == 0) %>%
+        mutate(sinonimo = list(term))  %>%
+        distinct(code, sinonimo)  
+    diccionario <- merge(main_terms, sinonimos %>% 
+                             group_by(code) %>%
+                             mutate(sinonimo = list(sinonimo)), by = "code", all.x=TRUE)
+    
+    diccionario
+}
+
+
 loadDict  <- function(abspath2dicc) {
     # /srv/shiny-server/bioMnorm/data/diccionario.tsv
     diccionario <- read.csv(abspath2dicc,sep="\t",
@@ -81,6 +116,9 @@ loadDict  <- function(abspath2dicc) {
     # Apply function para obtener URL de diccionario.
     parte_web1="https://browser.ihtsdotools.org/?perspective=full&conceptId1="
     parte_web2="&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false"
+    # Al incluir el gazzeteer:
+    # https://browser.ihtsdotools.org/?perspective=full&conceptId1={CODE}&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false
+    
     diccionario<-  diccionario %>% 
         rowwise()  %>%
         mutate(url = paste0(parte_web1,code,parte_web2))

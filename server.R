@@ -6,7 +6,7 @@ server <- function(input, output, session) {
     # Reactive variables
     userState <- reactiveValues(user = NULL, loggedIn = FALSE, 
                                 role = NULL, data = NULL, 
-                                projects = NULL)
+                                projects = NULL, terminologies = NULL)
     
     # Variable reactiva para controlar la visibilidad del módulo
     showModule <- reactiveVal(TRUE)
@@ -37,13 +37,13 @@ server <- function(input, output, session) {
             # If the user is not logged in, show the login modal dialog
             showModal(modalDialog(id = "loginModal", loginModuleUI("loginModule")))
             # Call the 'loginModule' module to handle the login process
-            callModule(loginModule, "loginModule", con = con, userState = userState)
+            callModule(loginModule, "loginModule", con = con, con_terminologies =  con_terminologies,con_projects = con_projects, userState = userState)
         } else
         {
             # If the user is logged in, show the logout modal dialog
             showModal(modalDialog(id = "loginModal", logoutModuleUI("logoutModule")))
             # Call the 'logoutModule' module to handle the logout process
-            callModule(logoutModule, "logoutModule", con = con, userState = userState)
+            callModule(logoutModule, "logoutModule", con = con,userState = userState)
         }
     })
     
@@ -74,6 +74,10 @@ server <- function(input, output, session) {
                  db = mongo_database,
                  url = paste0("mongodb://",mongo_host,":",mongo_port),
                  options = ssl_options(weak_cert_validation = TRUE)) 
+    con_projects  <- mongo(collection = mongo_projects_collection,
+                           db = mongo_database,
+                           url = paste0("mongodb://",mongo_host,":",mongo_port),
+                           options = ssl_options(weak_cert_validation = TRUE)) 
     con_documents <- mongo(collection = mongo_documents_collection,
                            db = mongo_database,
                            url = paste0("mongodb://",mongo_host,":",mongo_port),
@@ -86,7 +90,14 @@ server <- function(input, output, session) {
                              db = mongo_database,
                              url = paste0("mongodb://",mongo_host,":",mongo_port),
                              options = ssl_options(weak_cert_validation = TRUE)) 
-    
+    con_terminologies <- mongo(collection = mongo_terminologies_collection,
+                           db = mongo_database,
+                           url = paste0("mongodb://",mongo_host,":",mongo_port),
+                           options = ssl_options(weak_cert_validation = TRUE)) 
+    con_terms <- mongo(collection = mongo_terms_collection,
+                               db = mongo_database,
+                               url = paste0("mongodb://",mongo_host,":",mongo_port),
+                               options = ssl_options(weak_cert_validation = TRUE)) 
     # Count number of sessions
     isolate(vals$count <- vals$count + 1)
     
@@ -100,7 +111,7 @@ server <- function(input, output, session) {
     
     # Observer to update thes pages when clicking options on sidebar
     observeEvent(input$tabs, {
-        if (input$tabs %in% session$userData$projects) {
+            if (input$tabs %in% session$userData$projects) {
             # If user is annotator enter annotator interface
             if (userState$role == "annotator"){
                 # Render annotator interface module
@@ -108,7 +119,7 @@ server <- function(input, output, session) {
                     generalAnnotatorInterfaceUI("x")
                 })
                 callModule(generalAnnotatorInterface, "x") 
-                
+
                 # mongo user
                 query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
                                                            userState$user, "\"}", 
@@ -122,8 +133,12 @@ server <- function(input, output, session) {
                 session$userData$annotation_db_endpoint <- con_annotations
                 session$userData$mentions_db_endpoint <- con_mentions
                 session$userData$documents_db_endpoint <- con_documents
+                session$userData$projects_db_endpoint <- con_projects
+                session$userData$terminologies_db_endpoint <- con_terminologies
+                session$userData$terms_db_endpoint <- con_terms
                 session$userData$data <- query_mongo_user
-                
+                session$userData$terms <- con_terms
+                session$userData$terminologies <- session$userData$terminologies
                 # ObserveEvent for full_text panel in annoator interface
                 observeEvent(input[["x-pannel_output-full_text"]], {
                     if (input[["x-pannel_output-full_text"]] == TRUE)
@@ -139,7 +154,7 @@ server <- function(input, output, session) {
                 output$output_test <- renderUI({
                     generalValidationInterfaceUI("y")
                 })
-                callModule(generalValidationInterface, "y",con)
+                callModule(generalValidationInterface, "y",con,con_projects)
                 
                 # mongo user
                 query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
@@ -155,10 +170,53 @@ server <- function(input, output, session) {
                 session$userData$mentions_db_endpoint <- con_mentions
                 session$userData$documents_db_endpoint <- con_documents
                 session$userData$data <- query_mongo_user
+                session$userData$terms <- con_terms
+                session$userData$terminologies <- session$userData$terminologies
             }
             
             
-        } else if (input$tabs == "config")
+        } else if (input$tabs == "new_project")
+        {
+            # Render validation interface module
+            output$output_test <- renderUI({
+                generalProjectCreationInterfaceUI("y",con, con_terminologies)
+            })
+            callModule(generalProjectCreationInterface, "y",con, con_terminologies, con_projects)
+            
+        } else if (input$tabs %in% session$userData$terminologies) 
+        {
+            output$output_test <- renderUI({
+                generalGazzeteerInterfaceUI("y", con_terminologies)
+            })
+            callModule(generalGazzeteerInterface, "y",con_terms, con_terminologies)
+            
+            # mongo user
+            query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
+                                                       userState$user, "\"}", 
+                                                       sep = ""))
+            # Update session data with user information
+            session$userData$user <- userState$user
+            session$userData$loggedIn <- TRUE
+            session$userData$role <- userState$role
+            session$userData$projects <- session$userData$projects
+            session$userData$current_project <- input$tabs
+            session$userData$annotation_db_endpoint <- con_annotations
+            session$userData$mentions_db_endpoint <- con_mentions
+            session$userData$documents_db_endpoint <- con_documents
+            session$userData$data <- query_mongo_user
+            session$userData$terms <- con_terms
+            session$userData$terminologies <- session$userData$terminologies
+            session$userData$current_gazzeteer <- input$tabs
+            
+        } else if (input$tabs == "new_terminology")
+        {
+            # Render validation interface module
+            output$output_test <- renderUI({
+                generalGazzeteerCreationInterfaceUI("y",con)
+            })
+            callModule(generalGazzeteerCreationInterface, "y",con, con_terminologies, con_projects)
+        }
+        else if (input$tabs == "config")
         {
             output$output_test <- renderUI({
                 generalConfigInterfaceUI("y")
