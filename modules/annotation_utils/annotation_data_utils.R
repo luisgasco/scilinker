@@ -51,7 +51,8 @@ loadAnnotations <- function(session, user_ide, project_id){
             sem_rels = I(rep(list("EXACT"), 0)),    # Lista vacía con 0 elementos
             text = character(),
             total_time = numeric(),
-            list_times = I(rep(list("EXACT"), 0))
+            list_times = I(rep(list("EXACT"), 0)),
+            annotation_comments = character()
         )
     }
     output
