@@ -468,7 +468,15 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
                                     project_info = project_info)
 
             }
+            
+            
             removeModal()
+            # SI INPUT$PRENORMALISE_DATA IS FALSE, llamar aquí al servicio de API de LOKMAN 
+            # ESENCIALMENTE SERIA LANZAR EL POST, Y ADEMÄS SACAR UN MODAL PARA INFORMAR
+            # QUE SE TARDARA UN RATO EN TENER LAS PREDICCIONES PREDICHAS Y QUE EL CIERRE DE LA 
+            # VENTANA NO AFECTARÁ A LA PREDICCIÖN.
+            
+            
             
             # Reset reactive values and inputs
             file_info$file <- NULL

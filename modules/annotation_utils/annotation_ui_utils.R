@@ -320,6 +320,7 @@ generate_panel <- function(ns,datos_reactive, reactive_values, dicc_filt, sel_ro
                      
                      
                  ),
+                 textAreaInput(ns("annotation_comments"),"Comments:", value = reactive_values$annotation_comments(),width="100%"),
                  tags$p(HTML(paste0("<b>Normalization:</b>"))),
                  tags$div(style = "overflow-y: scroll;  max-height:475px",
                           num <- isolate(reactive_values$num_codes()),

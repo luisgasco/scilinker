@@ -68,13 +68,14 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
     need_context <- reactiveVal(FALSE)
     is_wrong <- reactiveVal(FALSE)
     timer <- reactiveVal()
+    annotation_comments <- reactiveVal()
     # Put reactive values in a list to easily access them 
     reactive_values <- list(context_id = context_id, composite_id = composite_id,
                             abbrev_id = abbrev_id, num_codes = num_codes,
                             show_text = show_text,prev_annotated = prev_annotated,
                             is_abb = is_abb, is_composite = is_composite,
                             need_context = need_context, is_wrong = is_wrong,
-                            timer = timer)
+                            timer = timer, annotation_comments = annotation_comments)
     
     # Loading modal while data is being prepared
     observeEvent(session$userData$current_project, {
@@ -105,6 +106,7 @@ generalAnnotatorInterface <- function(input, output, session,datos_reactive)
         is_composite(FALSE)
         need_context(FALSE)  
         is_wrong(FALSE)
+        annotation_comments()
         # Load the gazzeteer when loading all the data
         current_gaz_id <- session$userData$projects_db_endpoint$find(toJSON(list(name = session$userData$current_project), auto_unbox  = TRUE))$gazetteer_id
         current_gaz_info <- session$userData$terminologies_db_endpoint$find(toJSON(list(name = current_gaz_id), auto_unbox  = TRUE))
@@ -238,6 +240,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         reactive_values$prev_annotated(FALSE)
         reactive_values$num_codes(1)
         reactive_values$is_wrong(FALSE)
+        reactive_values$annotation_comments("")
     })
     # 
     # Observe event to enable/disable the "full_text" button
@@ -275,6 +278,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         reactive_values$prev_annotated(input[["previously_annotated"]])
         reactive_values$is_wrong(input[["wrong_mention"]])
         reactive_values$need_context(input[["need_context"]])
+        reactive_values$annotation_comments(input[["annotation_comments"]])
         # We update the data frame so that there are no problems when saving data.
         update_logical_values_df(input,session, annotation_reactive,proxy,sel_row(),datos_reactive,reactive_values)
         # If num_codes is 1, update the composite input (to false)
@@ -366,6 +370,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                     reactive_values$num_codes(anotacion_existente$num_codes)
                     reactive_values$show_text(TRUE)
                     reactive_values$show_text(FALSE)
+                    reactive_values$annotation_comments(anotacion_existente$annotation_comments)
                     
                     # Logs for tracing errors
                     # test_dicc_filt_erase <<- dicc_filt
@@ -514,6 +519,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         # Calculate duration of annotation in seconds
         duration <- as.numeric(difftime(Sys.time(), reactive_values$timer(), units = "secs"))
         
+        
         # Logs for tracing errors
         # print("Estamos guardando la current annotation:")
         # print(current_annotation_id)
@@ -577,7 +583,12 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                     list_times = ifelse(user_id==session$userData$user &
                                             document_id == datos_reactive$data$document_id[sel_row()] &
                                             span_ini == datos_reactive$data$span_ini[sel_row()] &
-                                            span_end == datos_reactive$data$span_end[sel_row()], lapply(list_times, function(existing_list) c(existing_list, duration)), list_times)
+                                            span_end == datos_reactive$data$span_end[sel_row()], lapply(list_times, function(existing_list) c(existing_list, duration)), list_times),
+                    annotation_comments = ifelse(user_id==session$userData$user &
+                                                 document_id == datos_reactive$data$document_id[sel_row()] &
+                                                 span_ini == datos_reactive$data$span_ini[sel_row()] &
+                                                 span_end == datos_reactive$data$span_end[sel_row()],input[["annotation_comments"]],annotation_comments )
+                    
                 )
 
             
@@ -606,7 +617,8 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
                 sem_rels = ifelse(!is.null(semrel_list), list(semrel_list), list("prev_annotated")),
                 text = datos_reactive$data$span[sel_row()],
                 total_time = duration,
-                list_times = list(duration)
+                list_times = list(duration),
+                annotation_comments = input[["annotation_comments"]]
             )
             names(new_row$codes) <- "codes"
             names(new_row$sem_rels) <- "sem_rels"
@@ -636,6 +648,7 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
         # Update reactive value of prev_annotated and wrong_mention (that inhabilitate part of the inputs)
         reactive_values$prev_annotated(input[["previously_annotated"]])
         reactive_values$is_wrong(input[["wrong_mention"]])
+        reactive_values$annotation_comments("")
     })
 }
 

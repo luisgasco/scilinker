@@ -91,9 +91,11 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
                 list_times = ifelse(user_id==session$userData$user &
                                         document_id == datos_reactive$data$document_id[row_sel] &
                                         span_ini == datos_reactive$data$span_ini[row_sel] &
-                                        span_end == datos_reactive$data$span_end[row_sel], lapply(list_times, function(existing_list) c(existing_list, 0)), list_times)
-                
-                
+                                        span_end == datos_reactive$data$span_end[row_sel], lapply(list_times, function(existing_list) c(existing_list, 0)), list_times),
+                annotation_comments = ifelse(user_id==session$userData$user &
+                                                 document_id == datos_reactive$data$document_id[row_sel] &
+                                                 span_ini == datos_reactive$data$span_ini[row_sel] &
+                                                 span_end == datos_reactive$data$span_end[row_sel],input[["annotation_comments"]],annotation_comments)
             )
     }else{
         # Logs for tracing errors
@@ -116,7 +118,8 @@ update_logical_values_df <- function(input,session, annotation_reactive,proxy,ro
             sem_rels = list(semrel_list),
             text = datos_reactive$data$span[row_sel],
             total_time = 0,
-            list_times = list(0)
+            list_times = list(0),
+            annotation_comments = input[["annotation_comments"]]
         )
         names(new_row$codes) <- "codes"
         names(new_row$sem_rels) <- "sem_rels"
@@ -206,7 +209,8 @@ save_annotation_in_db <- function(db_con, anotation, texto, update_all){
                                   codes = c(anotation[1,]$codes), 
                                   sem_rels = c(anotation[1,]$sem_rels),
                                   total_time = c(anotation[1,]$total_time), # SUM new value to previous one
-                                  list_times = c(anotation[1,]$list_times)
+                                  list_times = c(anotation[1,]$list_times),
+                                  annotation_comments = anotation$annotation_comments[1]
                               )
                           ), auto_unbox  = TRUE))
             # Logs for tracing errors
