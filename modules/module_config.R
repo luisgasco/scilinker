@@ -75,15 +75,26 @@ generalConfigInterfaceUI <- function(id)
             title="",
             id = "config_tab",
             height = "620",
-            tabPanel("User stats", 
-                    div(
-                     valueBoxOutput(ns("projects")),
-                     valueBoxOutput(ns("documents"))
-                    )
-                    ),
             tabPanel("User config", 
                      uiOutput(ns("config_tab"))
+            ),
+            tabPanel("General user stats", 
+                    div(
+                         tags$p("Here you have some statistical information about the user's projects"),
+                         column(6,
+                                div(
+                                    tags$p("Total user projects:"),
+                                    valueBoxOutput(ns("projects"), width = 12)
+                                )
+                         ),
+                         column(6,
+                                div(
+                                    tags$p("Total user documents:"),
+                                    valueBoxOutput(ns("documents"), width = 12)
+                                )
+                         )
                      )
+            )
         )
     )
     )
@@ -102,8 +113,15 @@ generalConfigInterface <- function(input, output, session, con)
     # Generate content for ValueBox with number of documents associated to the user
     output$documents <- renderValueBox({
         valueBox(
-            sum(lengths(session$userData$data$projects[[1]]$documents)), "documents", icon = icon("file"),
+            sum(lengths(session$userData$data$projects[[1]]$documents)), "Documents", icon = icon("file"),
             color = "olive"
+        )
+    })
+    # Generate content for ValueBox with number of gazetteers associated to the user
+    output$gazetteers <- renderValueBox({
+        valueBox(
+            sum(lengths(session$userData$terminologies)), "Gazetteers", icon = icon("list"),
+            color = "blue"
         )
     })
     # Generate UI to show user data and password change button
