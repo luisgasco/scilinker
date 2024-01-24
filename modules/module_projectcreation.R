@@ -54,6 +54,24 @@ generalProjectCreationInterfaceUI <- function(id, con, con_terminologies)
                     fluidRow(
                         class = "align-items-center",
                         column(4,""),
+                        column(8, 
+                               shinyjs::hidden(
+                                   pickerInput(
+                                       inputId = ns("candidates_model"),
+                                       label = "Select your model to generate candidates:", 
+                                       choices = available_models
+                                   )
+                               ),
+                               shinyjs::hidden(
+                                   sliderInput(ns("number_candidates"), "Number of candidates to generate:",
+                                               min = 1, max = max_candidates,
+                                               value = 1)
+                               )
+                            )
+                    ),
+                    fluidRow(
+                        class = "align-items-center",
+                        column(4,""),
                         column(8,
                                pickerInput(
                                     inputId = ns("assign_norm_gazz"),
@@ -171,7 +189,12 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
     project_user_selection_accepted <- reactiveVal(NULL)
     project_user_percentage_accepted <- reactiveVal(NULL)
     
-    
+    # Show candidates_model_config output depending on prenormalised_data input
+    observeEvent(input$prenormalised_data,{
+        # Show/hide inputs 
+        toggle("candidates_model", anim=TRUE, time=0.5, animType="slide")
+        toggle("number_candidates", anim=TRUE, time=0.5, animType="slide")
+    },ignoreInit=TRUE)
     # Show slider for select percentage of documents for agreement when input$bool_perc_agreement is TRUE
     observeEvent(input$bool_perc_agreement, {
         if (input$bool_perc_agreement) {
@@ -429,14 +452,18 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
             # print(users_list)
             # Create annotation project
             # TEST IF IT WORKS AND ADD NEW FIELD CALLED "gazzeteer"
+            
+            
             create_annotation_project(mongo_url = paste0("mongodb://",mongo_host,":",mongo_port),
                                       db_name = mongo_database, 
                                       collection_name = mongo_projects_collection,
                                       project_name = input$new_project_name,
                                       project_description = input$project_description, 
                                       users_list = users_list,
-                                      gazetteer_id = input$assign_norm_gazz
-                                      )
+                                      gazetteer_id = input$assign_norm_gazz,
+                                      model_name = ifelse(input$prenormalised_data,"candidates precomputed",  input$candidates_model) ,
+                                      number_candidates = ifelse(input$prenormalised_data,"candidates precomputed",  as.character(input$number_candidates))
+                                      )  
             # Insert documents into documents_collection
             create_project_documents(mongo_url = paste0("mongodb://",mongo_host,":",mongo_port),
                                      db_name = mongo_database, 
@@ -470,12 +497,37 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
             }
             
             
-            removeModal()
-            # SI INPUT$PRENORMALISE_DATA IS FALSE, llamar aquí al servicio de API de LOKMAN 
-            # ESENCIALMENTE SERIA LANZAR EL POST, Y ADEMÄS SACAR UN MODAL PARA INFORMAR
-            # QUE SE TARDARA UN RATO EN TENER LAS PREDICCIONES PREDICHAS Y QUE EL CIERRE DE LA 
-            # VENTANA NO AFECTARÁ A LA PREDICCIÖN.
             
+            
+            # If data have not candidates, ask the API to get predictions
+            if (!input$prenormalised_data){
+                # URL for the POST request
+                url <- "http://localhost:8080/generate_candidates_by_project"
+                # Data to be sent in the POST request
+                post_data <- list(
+                    db_name = mongo_database,
+                    project_id = input$new_project_name,
+                    gazetteer = input$assign_norm_gazz,
+                    model_name = input$candidates_model,
+                    k_candidates = as.character(input$number_candidates)
+                )
+                print(post_data)
+                result_future <- future_promise({httr::POST(url, body = post_data, encode = "json")})  %>% 
+                    then(
+                        onFulfilled = function(value) {
+                            # Getting here means promise1 succeeded
+                            print("POST sent to API")
+                            return(content(value, "text"))
+                        },
+                        onRejected = function(err) {
+                            # Getting here means promise1 failed
+                            print("ERROR WHEN SENDING POST TO API")
+                        }
+                    )
+                
+            }
+            
+            removeModal()
             
             
             # Reset reactive values and inputs
@@ -497,7 +549,7 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
             updateTextInput(session = session, "new_project_name", value="")
             updateTextInput(session = session, "project_description", value="")
             status_project_name("")
-            updateCheckboxInput(session, "prenormalised_data",value =FALSE)
+            # updateCheckboxInput(session, "prenormalised_data",value =FALSE)
             status_upload_file("")
             status_user_selection("")
             updatePrettySwitch(session,"bool_perc_agreement",value=FALSE)

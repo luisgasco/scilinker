@@ -13,7 +13,11 @@ library(RColorBrewer)
 library(stringr)
 library(data.table)
 library(reticulate)
+library(httr)
+library(future)
+library(promises)
 shinyjs::useShinyjs()
+future::plan(future::multisession)  
 
 # Change to false if running on docker
 LOCAL = TRUE 
@@ -36,9 +40,12 @@ maximum_upload_size <- as.numeric(Sys.getenv("MAX_UPLOAD_SIZE_MB"))
 timeoutSeconds <- as.integer(Sys.getenv("TIMEOUT_SECONDS"))
 abspath2dicc  <- Sys.getenv("DICCIONARY_ABS_PATH")
 base_path <- Sys.getenv("ABS_PATH_LOCAL")
+available_models <- Sys.getenv("AVAILABLE_MODELS")
+available_models <- unlist(strsplit(available_models, ","))
+max_candidates <- as.numeric(Sys.getenv("MAX_CANDIDATES"))
 
 # Check if database exist. It it isn't, create it with the user admin:
-test_mongodb <- mongo(url = paste0("mongodb://","localhost",":",27017),db="admin")
+test_mongodb <- mongo(url = paste0("mongodb://",mongo_host,":",mongo_port),db="admin")
 if (!(mongo_database %in% test_mongodb$run('{"listDatabases":1}')$databases$name)){
     temp_connection <- mongo(db = mongo_database, url = paste0("mongodb://",mongo_host,":",mongo_port, collection = mongo_user_collection))
     # Inserta un documento en una colección (esto creará la base de datos si no existe)

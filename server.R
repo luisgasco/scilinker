@@ -154,7 +154,7 @@ server <- function(input, output, session) {
                 output$output_test <- renderUI({
                     generalValidationInterfaceUI("y")
                 })
-                callModule(generalValidationInterface, "y",con,con_projects)
+                callModule(generalValidationInterface, "y",con,con_projects,con_mentions)
                 
                 # mongo user
                 query_mongo_user <- con$find(query = paste("{\"user_name\": \"",
