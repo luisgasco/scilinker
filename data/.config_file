@@ -26,6 +26,11 @@ ABS_PATH_LOCAL="~"
 #ABS_PATH_LOCAL="/srv/shiny-server"
 # Update mentions where are equal and don't need context
 UPDATE_ALL=FALSE
+# MODEL CONFIGURATION
+# List of available models to select:
+AVAILABLE_MODELS="spanish_sapbert_15_parents_1epoch,cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR"
+# Maximum number of candidates in slider:
+MAX_CANDIDATES=50
 # PATHS TO DATA
 #If running app in local : 
 DICCIONARY_ABS_PATH="~/scilinker/data/diccionario.tsv"

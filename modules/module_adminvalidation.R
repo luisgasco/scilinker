@@ -36,7 +36,7 @@ generalValidationInterfaceUI <- function(id)
     )
 
 }
-generalValidationInterface<- function(input, output, session, con, con_projects)
+generalValidationInterface<- function(input, output, session, con, con_projects, con_mentions)
 {
     ns <- session$ns
     
@@ -44,7 +44,29 @@ generalValidationInterface<- function(input, output, session, con, con_projects)
     # in the project, number of annotations done by annotator users, download 
     # those annotations in tsv format, and show stats per each user.
     output$project_stats <- renderUI({
-        gazetteer_id_name <- con_projects$find(toJSON(list(name = session$userData$current_project), auto_unbox  = TRUE))$gazetteer_id
+        query_project <- con_projects$find(toJSON(list(name = session$userData$current_project), auto_unbox  = TRUE))
+        query_mention <- con_mentions$find(toJSON(list(project_id = session$userData$current_project),auto_unbox=TRUE))
+        
+        # If candidate_codes field is different to the project's "k", we will show a loading gif.
+        # Si query_project$k es precomputed, directamente habrá que poner el tick
+        show_loading <- ifelse(query_project$k=="candidates precomputed", 
+                               FALSE, 
+                               as.character(length(query_mention$candidate_codes[[1]])) != query_project$k
+                               )
+        status_calculation <- ifelse(show_loading, 
+                                     ' <img src="loading.gif" alt="Loading..."  style="height:30px; margin-left: -10px"/>In progress  
+                                     <div class="hover-text"> <i class="fas fa-question-circle"></i><span class="tooltip-text" id="righttooltip">
+                                     Candidate calculation time may vary depending on the number of mentions and size of the gazetteer. If it
+                                     remains "In progress" for too long, it is possible that there was a problem during the calculation process,
+                                     delete the project and try to generate it again. </span></div>',
+                                     '<i class="fas fa-check"  style="color: green;"> </i> Completed')
+                              
+        print("SHOWLOADING")
+        print(show_loading)
+        print(as.character(length(query_mention$candidate_codes[[1]])))
+        print(query_project$k)
+        
+        
         column(12,
             fluidRow(
                 h4("General"),
@@ -56,7 +78,22 @@ generalValidationInterface<- function(input, output, session, con, con_projects)
             fluidRow(
                 class = "align-items-center",
                 column(5,HTML("<b>Gazetteer used in the project:</b>")),
-                column(7,HTML(gazetteer_id_name))
+                column(7,HTML(query_project$gazetteer_id))
+            ),
+            fluidRow(
+                class = "align-items-center",
+                column(5,HTML("<b>Model used to generate candidates:</b>")),
+                column(7,HTML(query_project$model))
+            ),
+            fluidRow(
+                class = "align-items-center",
+                column(5,HTML("<b>Number of candidates generated per mention:</b>")),
+                column(7,HTML(query_project$k))
+            ),
+            fluidRow(
+                class = "align-items-center",
+                column(5,HTML("<b>Status of candidate codes calculation:</b>")),
+                column(7,HTML(status_calculation))
             ),
             hr(),
             fluidRow(
@@ -64,11 +101,12 @@ generalValidationInterface<- function(input, output, session, con, con_projects)
                     h4("User stats"),
                     div(
                         column(8, uiOutput(ns("user_stats"))),
-                        column(4, plotOutput(ns("user_timegraph")))
+                        column(4, uiOutput(ns("user_timegraphUI")))
                     )
                 )
             )
         )
+       
     })
     
     # Render value Box of number of documents associated to the current project
@@ -109,10 +147,10 @@ generalValidationInterface<- function(input, output, session, con, con_projects)
             query_mentions <- sprintf('{"project_id": "%s", "validated_by.user_id": "%s"}', session$userData$current_project, users_of_project[i])
             num_menciones <-  nrow(session$userData$mentions_db_endpoint$find(query_mentions))
             query_anotations <- sprintf('{"project_id": "%s", "user_id": "%s"}', session$userData$current_project, users_of_project[i])
-            annotations <- session$userData$annotation_db_endpoint$find(query_anotations)
+            annotations <<- session$userData$annotation_db_endpoint$find(query_anotations)
             num_anotations <- nrow(annotations)
             percentage_mentions <- (num_anotations / num_menciones) * 100
-            average_time <- ifelse(is.null(sum(annotations$total_time) / num_anotations), 0, sum(annotations$total_time) / num_anotations )
+            average_time <- ifelse(is.nan(sum(annotations$total_time) / num_anotations), 0, sum(annotations$total_time) / num_anotations )
             # Compute
             div(
                 column(7,
@@ -134,13 +172,24 @@ generalValidationInterface<- function(input, output, session, con, con_projects)
         })
     })
     # Render a UI with a boxplot
-    output$user_timegraph <- renderPlot({
+    output$user_timegraphUI <- renderUI({
+        query_anotations <- sprintf('{"project_id": "%s"}', session$userData$current_project)
+        annotations_out <- session$userData$annotation_db_endpoint$find(query_anotations)
+        if ("total_time" %in% names(annotations_out)) {
+            plotOutput(ns("user_timegraph_plot"))
+        } else {
+            # Mostrar un mensaje si total_time no está presente
+            div(p("When the user starts annotating, a box-plot will appear to view the distribution of annotation times."))
+        }
+        
+    })
+    
+    output$user_timegraph_plot <- renderPlot({
         query_anotations <- sprintf('{"project_id": "%s"}', session$userData$current_project)
         annotations_out <- session$userData$annotation_db_endpoint$find(query_anotations)
         par(mar = c(2, 4, 0, 2)) 
-        boxplot(total_time ~ user_id, data=annotations_out)
+        boxplot(total_time ~ user_id, data = annotations_out)
     })
-    
     # Reactive data to prepare the tsv content with annotations
     tsv_content <- reactive({
         # Select data from mongodb

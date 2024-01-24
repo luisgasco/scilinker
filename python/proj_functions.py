@@ -3,7 +3,7 @@ import numpy as np
 from pymongo import MongoClient
 from pathlib import Path
 
-def create_annotation_project(mongo_url, db_name, collection_name, project_name, project_description, users_list, gazetteer_id):
+def create_annotation_project(mongo_url, db_name, collection_name, project_name, project_description, users_list, gazetteer_id, model_name, number_candidates):
     client = MongoClient(mongo_url)
     db = client[db_name]
     collection = db[collection_name]
@@ -26,7 +26,9 @@ def create_annotation_project(mongo_url, db_name, collection_name, project_name,
             "name": project_name,
             "description": project_description,
             "gazetteer_id": gazetteer_id,
-            "users": users_list
+            "users": users_list,
+            "model": model_name,
+            "k": number_candidates
         }
         collection.insert_one(project)
     
