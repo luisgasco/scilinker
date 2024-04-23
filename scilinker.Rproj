@@ -11,3 +11,7 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: XeLaTeX
+
+PythonType: system
+PythonVersion: 3.8.10
+PythonPath: /usr/bin/python3.8

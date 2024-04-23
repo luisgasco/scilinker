@@ -63,7 +63,9 @@ RUN R  -e "renv::restore(prompt=FALSE)"
 USER shiny
 RUN R  -e "renv::restore(prompt=FALSE)"
 
-
+# Install a local python environemnt:
+# Esto reuqiere instalar la misma versión de python
+# reticulate::install_python(version='3.8.10')
 
 # Entrar a srv/shiny-server/bioMnorm . A R y ejecutar renv:repair()
 # Change to USER shiny and add permises so folder (ver error entrando dentro de BioMnorm a R (con R) y poniendo renv::restore(). Ahí dirá que no puede acceder a X folder)

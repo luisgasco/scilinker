@@ -99,6 +99,10 @@ source(paste0(base_path,"/scilinker/modules/module_gazzeteerview.R"))
 # Maximum upload 
 options(shiny.maxRequestSize = maximum_upload_size*1024^2)
 
+
+# Load previously install python environment:
+use_virtualenv("~/scilinker/scilinker_py_env/")
+
 #Import python functions
 source_python('~/scilinker/python/gaz_functions.py')
 source_python('~/scilinker/python/proj_functions.py')
