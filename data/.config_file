@@ -1,7 +1,10 @@
 #If running app in local : localhost
 MONGODB_HOST="localhost"
-#If running app in docker: 
+#If running app in docker in windos: 
 #MONGODB_HOST="host.docker.internal"
+# If running app in docker in linux. Local mongodb needs to 
+# listen to every ip in /etc/mongod.conf (bindIp: 0.0.0.0) and then restart service: sudo systemctl restart mongod
+#MONGODB_HOST="172.17.0.1"
 #If running app in server: 
 #MONGODB_HOST="textmining2.bsc.es"
 MONGODB_PORT="27017"
