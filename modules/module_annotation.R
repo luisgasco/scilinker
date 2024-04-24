@@ -329,9 +329,10 @@ pannelAnnotator <- function(input, output, session,datos_reactive,sel_row,reacti
             reactive_values$composite_id(gsub("[.#-]","_",paste0("compositex_",datos_reactive$data[sel_row(),]$document_id,"#",datos_reactive$data[sel_row(),]$span_ini,"#",datos_reactive$data[sel_row(),]$span_end)))
             reactive_values$context_id(gsub("[.#-]","_",paste0("contextx_",datos_reactive$data[sel_row(),]$document_id,"#",datos_reactive$data[sel_row(),]$span_ini,"#",datos_reactive$data[sel_row(),]$span_end)))
             # Logs for tracing errors
-            # asd <<- datos_reactive$data
-            # asd2 <<- annotation_reactive$data
-            # asd22<<- dicc_filt
+            #asd <<- datos_reactive$data
+            #asd2 <<- annotation_reactive$data
+            #print(annotation_reactive$data)
+            #asd22<<- dicc_filt
             # Get current system time to calculate time spent when saving
             reactive_values$timer(Sys.time())
             # print("Tiempo obtenido en renderUI")
