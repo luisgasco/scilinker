@@ -101,11 +101,11 @@ options(shiny.maxRequestSize = maximum_upload_size*1024^2)
 
 
 # Load previously install python environment:
-use_virtualenv("~/scilinker/scilinker_py_env/")
+use_virtualenv(paste0(base_path,"/scilinker/scilinker_py_env/")) 
 
 #Import python functions
-source_python('~/scilinker/python/gaz_functions.py')
-source_python('~/scilinker/python/proj_functions.py')
+source_python(paste0(base_path,'/scilinker/python/gaz_functions.py'))
+source_python(paste0(base_path,'/scilinker/python/proj_functions.py'))
 
 # If this variable is TRUE, the app will update all equal mentions assign to user 
 # (if they are not abbreviations or need context). NOT DEVELOP YET

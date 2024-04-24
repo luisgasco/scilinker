@@ -66,6 +66,7 @@ COPY global.R /srv/shiny-server/scilinker/
 COPY server.R /srv/shiny-server/scilinker/
 COPY renv/* /srv/shiny-server/scilinker/renv/
 COPY data/* /srv/shiny-server/scilinker/data/
+COPY python/* /srv/shiny-server/scilinker/python/
 COPY www/* /srv/shiny-server/scilinker/www/
 COPY modules/annotation_utils/* /srv/shiny-server/scilinker/modules/annotation_utils/
 COPY modules/* /srv/shiny-server/scilinker/modules/

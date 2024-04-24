@@ -289,6 +289,8 @@ generalProjectCreationInterface<- function(input, output, session, con, con_term
                 if (all(columns %in% colnames(data))) {
                     # Transform code column if it exists
                     data$codes <- lapply(strsplit(gsub("\\[|\\]", "", data$codes), ", "), as.character)
+                    # Clean comillas added when reading file
+                    data$codes <- lapply(data$codes, function(x) gsub("^'|'$", "", x))
                     # Actualizar el mensaje de estado en verde
                     status_upload_file(paste("<p style='color:green;'>",
                                          paste("File uploaded. Number of documents:", length(file_info$txt_files),". Number of mentions:",nrow(data) ),

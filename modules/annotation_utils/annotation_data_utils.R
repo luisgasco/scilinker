@@ -83,6 +83,13 @@ loadDict2  <- function(diccionario, hyperlink_pattern) {
     partes <- strsplit(hyperlink_pattern, "{CODE}",fixed = TRUE)
     parte_web1 <- partes[[1]][1]
     parte_web2 <- partes[[1]][2]
+    # Comprobar si parte_web2 es NA y sustituir por ""
+    if (is.na(parte_web2)) {
+        parte_web2 <- ""
+    }
+    if (is.na(parte_web1)) {
+        parte_web1 <- ""
+    }
     # parte_web1="https://browser.ihtsdotools.org/?perspective=full&conceptId1="
     # parte_web2="&edition=MAIN/SNOMEDCT-ES/2022-10-31&release=&languages=es&latestRedirect=false"
     # Al incluir el gazzeteer:
@@ -91,6 +98,8 @@ loadDict2  <- function(diccionario, hyperlink_pattern) {
     diccionario<-  diccionario %>% 
         rowwise()  %>%
         mutate(url = paste0(parte_web1,code,parte_web2))
+    #asd_partes <<-partes
+    #asd<<-diccionario
     main_terms<-  diccionario  %>%
         group_by(code)  %>%
         filter(mainterm == 1) %>%
