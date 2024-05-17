@@ -19,8 +19,11 @@ library(promises)
 shinyjs::useShinyjs()
 future::plan(future::multisession)  
 
-# Change to false if running on docker
-LOCAL = TRUE 
+# If run in docker, the RUN_LOCAL will be passed 
+# through docker-compose as true.
+LOCAL <- Sys.getenv("RUN_LOCAL",unset="false")
+LOCAL <- tolower(LOCAL) == "true"
+
 
 # Read environment variables
 readRenviron(ifelse(LOCAL,"~/scilinker/data/.config_file","/srv/shiny-server/scilinker/data/.config_file"))
