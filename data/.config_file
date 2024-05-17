@@ -1,16 +1,13 @@
 #If running app in local : localhost
-MONGODB_HOST="localhost"
-#If running app in docker in windos: 
+MONGODB_HOST="mongo_scilinker"
+# If you are running the app with a local mongoDB, uncomment the following line and comment the previous one
+#MONGODB_HOST="localhost"
+#If running app in docker in WSL2: 
 #MONGODB_HOST="host.docker.internal"
-# If running app in docker in linux. Local mongodb needs to 
-# listen to every ip in /etc/mongod.conf (bindIp: 0.0.0.0) and then restart service: sudo systemctl restart mongod
-#MONGODB_HOST="172.17.0.1"
-#If running app in server: 
-#MONGODB_HOST="textmining2.bsc.es"
 MONGODB_PORT="27017"
 MONGODB_USER="admin"
 MONGODB_PASSWORD=""
-MONGODB_DATABASENAME="prueba_3"
+MONGODB_DATABASENAME="scilinker"
 MONGODB_USER_COLLECTION="usuarios"
 MONGODB_PROJECTS_COLLECTION="proyectos"
 MONGODB_MENTIONS_COLLECTION="menciones"
@@ -34,8 +31,4 @@ UPDATE_ALL=FALSE
 AVAILABLE_MODELS="spanish_sapbert_15_parents_1epoch,cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR"
 # Maximum number of candidates in slider:
 MAX_CANDIDATES=50
-# PATHS TO DATA
-#If running app in local : 
-DICCIONARY_ABS_PATH="~/scilinker/data/diccionario.tsv"
-#If running app in docker : 
-#DICCIONARY_ABS_PATH="/srv/shiny-server/scilinker/data/diccionario.tsv"
+

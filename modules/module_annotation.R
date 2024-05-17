@@ -8,10 +8,10 @@ library(fontawesome)
 shinyjs::useShinyjs()
 
 # Load submodules for annotation module
-source(paste0(base_path,"/scilinker/modules/error_handling.R"))
-source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_ui_utils.R"))
-source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_data_utils.R"))
-source(paste0(base_path,"/scilinker/modules/annotation_utils/annotation_backend_utils.R"))
+source(paste0(base_path,"/modules/error_handling.R"))
+source(paste0(base_path,"/modules/annotation_utils/annotation_ui_utils.R"))
+source(paste0(base_path,"/modules/annotation_utils/annotation_data_utils.R"))
+source(paste0(base_path,"/modules/annotation_utils/annotation_backend_utils.R"))
 
 # General Annotator Interace module ----
 # Module to generate the graphical interface for normalization.

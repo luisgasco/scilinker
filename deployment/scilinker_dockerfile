@@ -1,4 +1,5 @@
 FROM rocker/shiny:4.2
+
 # Install system requirements for index.R as needed
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
@@ -17,12 +18,21 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get -y update
 RUN apt-get -y install vim nano
 
+# Install Python 3.8.10 and other essentials
+RUN apt-get update && apt-get install -y software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update && apt-get install -y python3.8 python3.8-venv python3.8-dev
+
+
+
 ARG CACHEBUST=1
 
 RUN pwd && echo "output pwd asv" 
 
 # GET FILES
 RUN git clone https://github.com/luisgasco/scilinker.git && echo "output pwd asv" 
+
+
 
 # ENVIRONMMENT
 ENV RENV_VERSION 0.17.3
@@ -37,6 +47,13 @@ WORKDIR /scilinker
 RUN pwd && echo "output pwd asv" 
 RUN ls -lh && echo "Ofasfasfautput of ls command above aasf" 
 
+
+# Activate environment and install Python packages from requirements.txt
+COPY requirements.txt /srv/shiny-server/scilinker/
+RUN python3.8 -m venv /srv/shiny-server/scilinker/scilinker_py_env
+RUN . /srv/shiny-server/scilinker/scilinker_py_env/bin/activate && pip install -r /srv/shiny-server/scilinker/requirements.txt
+
+# Copy files to server path
 COPY renv.lock /srv/shiny-server/scilinker/
 COPY renv/activate.R  /srv/shiny-server/scilinker/renv/
 #COPY .Rprofile /home/shiny/
@@ -49,6 +66,7 @@ COPY global.R /srv/shiny-server/scilinker/
 COPY server.R /srv/shiny-server/scilinker/
 COPY renv/* /srv/shiny-server/scilinker/renv/
 COPY data/* /srv/shiny-server/scilinker/data/
+COPY python/* /srv/shiny-server/scilinker/python/
 COPY www/* /srv/shiny-server/scilinker/www/
 COPY modules/annotation_utils/* /srv/shiny-server/scilinker/modules/annotation_utils/
 COPY modules/* /srv/shiny-server/scilinker/modules/
@@ -63,13 +81,10 @@ RUN R  -e "renv::restore(prompt=FALSE)"
 USER shiny
 RUN R  -e "renv::restore(prompt=FALSE)"
 
-# Install a local python environemnt:
-# Esto reuqiere instalar la misma versión de python
-# reticulate::install_python(version='3.8.10')
+
 
 # Entrar a srv/shiny-server/bioMnorm . A R y ejecutar renv:repair()
 # Change to USER shiny and add permises so folder (ver error entrando dentro de BioMnorm a R (con R) y poniendo renv::restore(). Ahí dirá que no puede acceder a X folder)
-
 
 #EXPOSE 3838
 

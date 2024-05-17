@@ -8,15 +8,15 @@ services:
     ports:
       - ${APP_PORT}:3838
     restart: always
-    environment:
-      - RUN_LOCAL=false
+    depends_on:
+      - mongo_scilinker
 
   mongo_scilinker:
     image: mongo:5.0
     volumes:
       - ${MONGO_VOLUME_PATH}:/data/db
     ports:
-      - 27017:27017
+      - ${EXTERNAL_PORT_MONGO}:27017
     restart: always
     command: ["mongod", "--dbpath", "/data/db", "--bind_ip_all"]
 

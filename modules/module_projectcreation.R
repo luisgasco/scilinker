@@ -1,5 +1,5 @@
 
-source(paste0(base_path,"/scilinker/modules/help_menus.R"))
+source(paste0(base_path,"/modules/help_menus.R"))
 
 
 # generalValidationInterface module  ----
