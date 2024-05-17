@@ -1,0 +1,26 @@
+version: "3"
+services:
+  shiny-app:
+    container_name: scilinker
+    build:
+      context: ../
+      dockerfile: deployment/scilinker_dockerfile
+    ports:
+      - ${APP_PORT}:3838
+    restart: always
+
+  mongo_scilinker:
+    image: mongo:5.0
+    volumes:
+      - ${MONGO_VOLUME_PATH}:/data/db
+    ports:
+      - 27017:27017
+    restart: always
+    command: ["mongod", "--dbpath", "/data/db", "--bind_ip_all"]
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: '10.20.0.0/16'
+
