@@ -9,7 +9,7 @@ services:
       - ${APP_PORT}:3838
     restart: always
     environment:
-      - RUN_SERVER=${RUN_SERVER}
+      - RUN_LOCAL=false
 
   mongo_scilinker:
     image: mongo:5.0
