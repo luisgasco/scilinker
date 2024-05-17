@@ -21,7 +21,7 @@ future::plan(future::multisession)
 
 # If run in docker, the RUN_LOCAL will be passed 
 # through docker-compose as true.
-LOCAL <- Sys.getenv("RUN_LOCAL",unset="false")
+LOCAL <- Sys.getenv("RUN_LOCAL",unset="true")
 LOCAL <- tolower(LOCAL) == "true"
 
 
