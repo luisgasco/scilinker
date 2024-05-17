@@ -86,6 +86,7 @@ RUN R  -e "renv::restore(prompt=FALSE)"
 # Entrar a srv/shiny-server/bioMnorm . A R y ejecutar renv:repair()
 # Change to USER shiny and add permises so folder (ver error entrando dentro de BioMnorm a R (con R) y poniendo renv::restore(). Ahí dirá que no puede acceder a X folder)
 
+
 #EXPOSE 3838
 
 CMD ["/usr/bin/shiny-server"]
