@@ -8,6 +8,8 @@ services:
     ports:
       - ${APP_PORT}:3838
     restart: always
+    environment:
+      - RUN_LOCAL=${RUN_LOCAL}
 
   mongo_scilinker:
     image: mongo:5.0
